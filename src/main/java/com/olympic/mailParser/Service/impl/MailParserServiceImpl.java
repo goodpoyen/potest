@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.olympic.mailParser.DAO.Entity.SignUpStudents;
 import com.olympic.mailParser.DAO.Repository.SignUpStudentsRepository;
 import com.olympic.mailParser.Service.MailParserService;
+import com.olympic.mailParser.until.Verify;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvValidationException;
@@ -36,6 +37,11 @@ public class MailParserServiceImpl implements MailParserService {
 	
 	@Autowired
 	private MailServiceImpl MailServiceImpl;
+	
+	@Autowired
+	private Verify Verify;
+	
+	private String errorMessage;
 	
 	
 	public POP3Store mailConnectPOP3 () throws Exception {
@@ -76,8 +82,8 @@ public class MailParserServiceImpl implements MailParserService {
         for (int i = 0, count = messages.length; i < count; i++) {
             MimeMessage msg = (MimeMessage) messages[i];
             
-            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
-//            if (MailServiceImpl.getSubject(msg).contains("奧林匹克") ) {
+//            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
+            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞66") ) {
             	System.out.println("------------------解析第" + msg.getMessageNumber() + "封信件-------------------- ");
                 System.out.println("主旨: " + MailServiceImpl.getSubject(msg));
                 System.out.println("發件人: " + MailServiceImpl.getFrom(msg));
@@ -101,6 +107,7 @@ public class MailParserServiceImpl implements MailParserService {
                 deleteFile(new File(mailFilePath + fileName));
             }
             
+            errorMessage = "";
             MailServiceImpl.setMailRead(msg, true);
         }
         folder.close(true);
@@ -154,18 +161,67 @@ public class MailParserServiceImpl implements MailParserService {
 	}
     
     public void saveSingUpData(String[] SingUpdata) {    	
-    	SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[0], SingUpdata[1]);
+    	for (String signUpValue : SingUpdata) {
+			if (signUpValue.isEmpty()) {
+				errorMessage += SingUpdata[1] + "-資料遺漏/n";
+				return;
+			}
+		}
     	
+    	SignUpStudents student = student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1], SingUpdata[2]);
+
     	if (student == null) {
-    		SignUpStudents SignUpStudents = new SignUpStudents();
-    		
-        	SignUpStudents.setName(SingUpdata[0]);
-        	SignUpStudents.setIdCard(SingUpdata[1]);
-        	
-        	signUpStudentsRepository.save(SignUpStudents);
-    	}else {
-    		signUpStudentsRepository.save(student);
+    		student = new SignUpStudents();
     	}
-        
+    	
+    	student.setItem(SingUpdata[0]);	
+    	student.setName(SingUpdata[1]);
+    	student.setIdCard(SingUpdata[2]);
+    	student.setSchoolName(SingUpdata[3]);
+    	student.setGrade(SingUpdata[4]);
+    	student.setBirthday(SingUpdata[5]);
+    	student.setEmail(SingUpdata[6]);
+    	student.setGender(SingUpdata[7]);
+    	
+    	if (checkSignUpData(student)) {
+    		signUpStudentsRepository.save(student);
+    	}else {
+    		System.out.println(errorMessage);
+    	}
+
+    }
+    
+    public Boolean checkSignUpData(SignUpStudents student) {
+    	Boolean status = true;
+    	
+    	errorMessage = student.getName() + "-";
+
+    	if (!Verify.checkIdCard(student.getIdCard())) {
+    		status = false;
+    		errorMessage += "身分證有誤;";
+    	}
+    	
+    	if (!Verify.checkValue(Integer.parseInt(student.getGrade()), 7, 12)) {
+    		status = false;
+    		errorMessage += "年級有誤;";
+    	}
+    	
+    	if (!Verify.checkDate(student.getBirthday())) {
+    		status = false;
+    		errorMessage += "出生日期有誤;";
+    	}
+
+    	if (!Verify.checkEmail(student.getEmail())) {
+    		status = false;
+    		errorMessage += "信箱有誤;";
+    	}
+    	
+
+    	if (!Verify.checkValue(Integer.parseInt(student.getGender()), 1, 2)) {
+    		status = false;
+    		errorMessage += "性別有誤;";
+    	}
+    	
+    	return status;
     }
 }
