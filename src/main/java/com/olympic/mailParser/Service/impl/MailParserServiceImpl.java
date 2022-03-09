@@ -41,6 +41,9 @@ public class MailParserServiceImpl implements MailParserService {
 	@Autowired
 	private Verify Verify;
 	
+	@Autowired
+	private AES256ServiceImpl AES256ServiceImpl;
+	
 	private String errorMessage;
 	
 	
@@ -82,8 +85,8 @@ public class MailParserServiceImpl implements MailParserService {
         for (int i = 0, count = messages.length; i < count; i++) {
             MimeMessage msg = (MimeMessage) messages[i];
             
-//            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
-            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞66") ) {
+            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
+//            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞66") ) {
             	System.out.println("------------------解析第" + msg.getMessageNumber() + "封信件-------------------- ");
                 System.out.println("主旨: " + MailServiceImpl.getSubject(msg));
                 System.out.println("發件人: " + MailServiceImpl.getFrom(msg));
@@ -130,10 +133,6 @@ public class MailParserServiceImpl implements MailParserService {
 
             	if (line != 0) {
             		saveSingUpData(nextRecord);
-//	            		for(String s : nextRecord)
-//	        				if(null != s && !s.equals(""))
-//	        					
-//	        					System.out.print(s);
             	}
                 
                 line ++;
@@ -168,7 +167,7 @@ public class MailParserServiceImpl implements MailParserService {
 			}
 		}
     	
-    	SignUpStudents student = student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1], SingUpdata[2]);
+    	SignUpStudents student = student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1], AES256ServiceImpl.encode(SingUpdata[2]));
 
     	if (student == null) {
     		student = new SignUpStudents();
@@ -184,6 +183,9 @@ public class MailParserServiceImpl implements MailParserService {
     	student.setGender(SingUpdata[7]);
     	
     	if (checkSignUpData(student)) {
+    		student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
+    		student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
+    		student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
     		signUpStudentsRepository.save(student);
     	}else {
     		System.out.println(errorMessage);
