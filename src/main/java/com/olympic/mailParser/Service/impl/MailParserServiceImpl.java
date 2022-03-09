@@ -6,12 +6,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import javax.mail.Flags;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.olympic.mailParser.DAO.Entity.SignUpStudents;
@@ -27,6 +27,9 @@ import com.sun.mail.pop3.POP3Store;
 
 @Service
 public class MailParserServiceImpl implements MailParserService {
+	
+	@Value("${mailFilePath}")
+	private String mailFilePath;
 	
 	@Autowired
     private  SignUpStudentsRepository signUpStudentsRepository;
@@ -86,7 +89,7 @@ public class MailParserServiceImpl implements MailParserService {
                 boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
                 System.out.println("是否包含附件：" + isContainerAttachment);
                 if (isContainerAttachment) {
-                	fileName = MailServiceImpl.saveAttachment(msg, "C:\\testData\\");   
+                	fileName = MailServiceImpl.saveAttachment(msg, mailFilePath);   
                 }
                 StringBuffer content = new StringBuffer(30);
                 MailServiceImpl.getMailTextContent(msg, content);
@@ -95,7 +98,7 @@ public class MailParserServiceImpl implements MailParserService {
                 System.out.println();
                 
                 fileReader(fileName);
-                deleteFile(new File("C:\\testData\\" + fileName));
+                deleteFile(new File(mailFilePath + fileName));
             }
             
             MailServiceImpl.setMailRead(msg, true);
@@ -105,7 +108,7 @@ public class MailParserServiceImpl implements MailParserService {
     }
 
 	public void fileReader(String fileName) {
-        String filePath = "C:\\testData\\" + fileName;
+        String filePath = mailFilePath + fileName;
         
         FileInputStream fileInputStream;
 		try {
