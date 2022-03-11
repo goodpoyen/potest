@@ -23,5 +23,11 @@ public class TestController {
 
 		return "finish";
 	}
+	
+//	@GetMapping("/hello")
+//	public String hello () throws Exception {
+//
+//		return "hello word3";
+//	}
 
 }

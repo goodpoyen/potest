@@ -18,14 +18,14 @@ public class SignUpStudents {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "sign_up_id")
-    private  Integer signUpID;
+    @Column(name = "st_id")
+    public  Integer stId;
 
     @Column(name = "name")
-    private  String name;
+    public  String name;
 
-    @Column (name = "item")
-    public String item;
+    @Column (name = "olympic")
+    public String olympic;
     
     @Column (name = "id_card")
     public String idCard;
