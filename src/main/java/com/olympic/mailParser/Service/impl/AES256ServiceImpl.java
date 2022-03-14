@@ -1,5 +1,8 @@
 package com.olympic.mailParser.Service.impl;
 
+import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Service;
 
 import com.olympic.mailParser.Service.AES256Service;
@@ -9,25 +12,32 @@ public class AES256ServiceImpl implements AES256Service{
 	/**
 	 * 金鑰, 256位32個位元組
 	**/
-    public static final String DEFAULT_SECRET_KEY = "uBdUx82vPHkDKb284d7NkjFoNcKWBuka";
+//    public static final String DEFAULT_SECRET_KEY = "uBdUx82vPHkDKb284d7NkjFoNcKWBuka";
+	public static String DEFAULT_SECRET_KEY = "";
  
     private static final String AES = "AES";
  
 	 /**
 	  * 初始向量IV, 初始向量IV的長度規定為128位16個位元組, 初始向量的來源為隨機生成.
 	 **/
-    private static final byte[] KEY_VI = "c558Gq0YQK2QUlMc".getBytes();
+//    private static final byte[] KEY_VI = "c558Gq0YQK2QUlMc".getBytes();
+    private static byte[] KEY_VI = "".getBytes();
 
     /**
      * 加密解密演算法/加密模式/填充方式
      */
-    private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+    private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS7Padding";
  
-    private static java.util.Base64.Encoder base64Encoder = java.util.Base64.getEncoder();
-    private static java.util.Base64.Decoder base64Decoder = java.util.Base64.getDecoder();
+    private static java.util.Base64.Decoder base64Decoder = java.util.Base64.getMimeDecoder();
+    private static java.util.Base64.Encoder base64Encoder = java.util.Base64.getMimeEncoder();
  
     static {
-    	java.security.Security.setProperty("crypto.policy", "unlimited");
+        Security.addProvider(new BouncyCastleProvider());
+    }
+    
+    public void setKey (String key, String IV) {
+    	DEFAULT_SECRET_KEY = key;
+    	KEY_VI = IV.getBytes();
     }
  
     /**
@@ -60,7 +70,7 @@ public class AES256ServiceImpl implements AES256Service{
          try {
             javax.crypto.SecretKey secretKey = new javax.crypto.spec.SecretKeySpec(DEFAULT_SECRET_KEY.getBytes(), AES);
             javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance(CIPHER_ALGORITHM);
-             cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, new javax.crypto.spec.IvParameterSpec(KEY_VI));
+            cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, new javax.crypto.spec.IvParameterSpec(KEY_VI));
 
             // 將加密並編碼後的內容解碼成位元組陣列
 	        byte[] byteContent = base64Decoder.decode(content);

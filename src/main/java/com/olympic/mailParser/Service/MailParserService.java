@@ -28,9 +28,13 @@ public interface MailParserService {
     
     void parseMessageIMAP(IMAPStore stroe, IMAPFolder folder) throws MessagingException, IOException, CsvException;
 
-	void fileReader(String fileName);
+	void fileReader(String fileName, MimeMessage msg);
+	
+	void fileReader1(String fileName, MimeMessage msg) throws IOException;
 	
 	void deleteFile(File file);
     
-    void saveSingUpData(String[] SingUpdata);
+    void saveSingUpData(String[] SingUpdata, MimeMessage msg);
+    
+    String switchOlympic (String[] SingUpdata, MimeMessage msg);
 }

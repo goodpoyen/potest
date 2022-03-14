@@ -73,4 +73,23 @@ public class Verify {
 		
 		return status;
 	}
+	
+	public Boolean checkSubject (String olympic) {
+		Boolean status = false;
+		
+		if (olympic.contains("[TOI]奧林匹亞")) {
+			status = true;
+		}
+			
+		return status;
+	}
+	
+	public String checkOlympic (String olympic) {
+		
+		if (olympic.contains("[TOI]")) {
+			return "TOI";
+		}
+			
+		return "";
+	}
 }

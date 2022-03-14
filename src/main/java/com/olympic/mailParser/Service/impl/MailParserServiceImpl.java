@@ -5,9 +5,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -17,8 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.olympic.mailParser.DAO.Entity.SignUpStudents;
-import com.olympic.mailParser.DAO.Repository.SignUpStudentsRepository;
 import com.olympic.mailParser.Service.MailParserService;
 import com.olympic.mailParser.until.Verify;
 import com.opencsv.CSVReader;
@@ -36,16 +37,16 @@ public class MailParserServiceImpl implements MailParserService {
 	private String mailFilePath;
 	
 	@Autowired
-    private  SignUpStudentsRepository signUpStudentsRepository;
-	
-	@Autowired
 	private MailServiceImpl MailServiceImpl;
 	
 	@Autowired
 	private Verify Verify;
 	
 	@Autowired
-	private AES256ServiceImpl AES256ServiceImpl;
+	private AES256ServiceImpl rowData;
+	
+	@Autowired
+	private TOISignUpServiceImpl TOISignUpServiceImpl;
 	
 	private String errorMessage;
 	
@@ -99,7 +100,8 @@ public class MailParserServiceImpl implements MailParserService {
             MimeMessage msg = (MimeMessage) messages[i];
             
 //            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
-            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") ) {
+            if (Verify.checkSubject(MailServiceImpl.getSubject(msg))) {
+//            if (MailServiceImpl.getSubject(msg).contains("[TOI]加密") ) {
    
             	mailMessages(msg);
             	
@@ -109,7 +111,8 @@ public class MailParserServiceImpl implements MailParserService {
                 	fileName = MailServiceImpl.saveAttachment(msg, mailFilePath);   
                 }
                 
-                fileReader(fileName);
+                fileReader(fileName, msg);
+//                fileReader1(fileName, msg);
                 deleteFile(new File(mailFilePath + fileName));
                 
                 HashMap<String, String> smtp = getSmtp();
@@ -126,7 +129,12 @@ public class MailParserServiceImpl implements MailParserService {
         			if (errorMessage == "檔案有問題") {
         				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案有問題");
             			mail.put("content", "請確認CSV檔案是否有問題");
-        			}else {
+        			}
+        			else if (errorMessage == "檔案加密有問題") {
+        				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案加密有問題");
+            			mail.put("content", "請確認加密鑰匙是否有誤");
+        			}
+        			else {
         				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名資料有誤");
             			mail.put("content", errorMessage);
         			}
@@ -162,7 +170,45 @@ public class MailParserServiceImpl implements MailParserService {
         System.out.println();
     }
 
-	public void fileReader(String fileName) {
+    public void fileReader1(String fileName, MimeMessage msg) throws IOException {
+        String filePath = mailFilePath + fileName;
+        
+        Path path = Paths.get(filePath);
+        String content = Files.readString(path);
+        
+        rowData.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
+        
+        content = rowData.decode(content);
+        
+        if (content == null) {
+        	errorMessage = "檔案加密有問題";
+        	return;
+        }
+        
+        FileInputStream fileInputStream;
+		try {
+			CSVReader csvReader = new CSVReader(new StringReader(content));
+
+    		String[] nextRecord;
+    		int line = 0;
+            while ((nextRecord = csvReader.readNext()) != null) {
+
+            	if (line != 0) {
+            		saveSingUpData(nextRecord, msg);
+            		if (errorMessage == "檔案有問題") {
+            			break;
+            		}
+            	}
+                
+                line ++;
+            }
+		} catch (CsvValidationException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    public void fileReader(String fileName, MimeMessage msg) {
         String filePath = mailFilePath + fileName;
         
         FileInputStream fileInputStream;
@@ -177,7 +223,10 @@ public class MailParserServiceImpl implements MailParserService {
             while ((nextRecord = csvReader.readNext()) != null) {
 
             	if (line != 0) {
-            		saveSingUpData(nextRecord);
+            		saveSingUpData(nextRecord, msg);
+            		if (errorMessage == "檔案有問題") {
+            			break;
+            		}
             	}
                 
                 line ++;
@@ -205,82 +254,39 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 	}
     
-    public void saveSingUpData(String[] SingUpdata) {  
-    	try {
-	    	for (String signUpValue : SingUpdata) {
-				if (signUpValue.isEmpty()) {
-					errorMessage += SingUpdata[1] + "-資料遺漏" + "\r\n";
-					return;
-				}
+    public void saveSingUpData(String[] SingUpdata, MimeMessage msg) {  
+    	for (String signUpValue : SingUpdata) {
+			if (signUpValue.isEmpty()) {
+				errorMessage += SingUpdata[1] + "-資料遺漏" + "\r\n";
+				return;
 			}
-	    	
-	    	SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1], AES256ServiceImpl.encode(SingUpdata[2]));
-	
-	    	if (student == null) {
-	    		student = new SignUpStudents();
-	    	}
-	    	
-	    	student.setOlympic(SingUpdata[0]);	
-	    	student.setName(SingUpdata[1]);
-	    	student.setIdCard(SingUpdata[2]);
-	    	student.setSchoolName(SingUpdata[3]);
-	    	student.setGrade(SingUpdata[4]);
-	    	student.setBirthday(SingUpdata[5]);
-	    	student.setEmail(SingUpdata[6]);
-	    	student.setGender(SingUpdata[7]);
-	    	
-	    	if (checkSignUpData(student)) {
-	    		student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
-	    		student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
-	    		student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
-	    		signUpStudentsRepository.save(student);	
-	    	}else {
-	    		errorMessage += "\r\n";
-	    	}
-    	}catch (Exception e) {
-    		errorMessage = "檔案有問題";
 		}
-
+    	
+    	if (errorMessage == null || "".equals(errorMessage)) {
+			errorMessage = switchOlympic(SingUpdata, msg);
+		}else {
+			errorMessage += switchOlympic(SingUpdata, msg);
+		}
     }
     
-    public Boolean checkSignUpData(SignUpStudents student) {
-    	Boolean status = true;
-    	String error = "";
-
-    	if (!Verify.checkIdCard(student.getIdCard())) {
-    		status = false;
-    		error += "身分證有誤;";
-    	}
+    public String switchOlympic (String[] SingUpdata, MimeMessage msg) {
+    	String type = "";
     	
-    	if (!Verify.checkValue(Integer.parseInt(student.getGrade()), 7, 12)) {
-    		status = false;
-    		error += "年級有誤;";
-    	}
+    	try {
+			type = Verify.checkOlympic(MailServiceImpl.getSubject(msg));
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     	
-    	if (!Verify.checkDate(student.getBirthday())) {
-    		status = false;
-    		error += "出生日期有誤;";
-    	}
-
-    	if (!Verify.checkEmail(student.getEmail())) {
-    		status = false;
-    		error += "信箱有誤;";
-    	}
-    	
-
-//    	if (!Verify.checkValue(Integer.parseInt(student.getGender()), 1, 2)) {
-//    		status = false;
-//    		errorMessage += "性別有誤;";
-//    	}
-    	
-    	if (!status) {
-    		if (errorMessage == null) {
-    			errorMessage = student.getName() + "-" + error;
-    		}else {
-    			errorMessage += student.getName() + "-" + error;
-    		}
-    	}
-    	
-    	return status;
+    	switch(type) { 
+	        case "TOI":
+	        	return TOISignUpServiceImpl.save(SingUpdata);
+	        default: 
+	            return "55"; 
+	    }
     }
 }
