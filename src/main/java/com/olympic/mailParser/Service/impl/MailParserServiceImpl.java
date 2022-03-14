@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -64,6 +66,16 @@ public class MailParserServiceImpl implements MailParserService {
 		return MailServiceImpl.getIMAPFolder(store);
 	}
 	
+	public HashMap<String, String> getSmtp () {
+		HashMap<String, String> smtp = new HashMap<String, String>();
+		
+		smtp.put("host", "mail.csie.ntnu.edu.tw");
+		smtp.put("username", "tor@csie.ntnu.edu.tw");
+		smtp.put("password", "tor@CSIE@6690");
+		
+		return smtp;
+	}
+	
 	/**
      * parser
      *
@@ -86,8 +98,8 @@ public class MailParserServiceImpl implements MailParserService {
         for (int i = 0, count = messages.length; i < count; i++) {
             MimeMessage msg = (MimeMessage) messages[i];
             
-            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
-//            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") ) {
+//            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
+            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") ) {
    
             	mailMessages(msg);
             	
@@ -99,9 +111,31 @@ public class MailParserServiceImpl implements MailParserService {
                 
                 fileReader(fileName);
                 deleteFile(new File(mailFilePath + fileName));
+                
+                HashMap<String, String> smtp = getSmtp();
+                HashMap<String, String> mail = new HashMap<String, String>();
+                
+                if (errorMessage == null || "".equals(errorMessage)) {
+                	mail.put("receive", MailServiceImpl.getFrom(msg));
+        			mail.put("from", "tor@csie.ntnu.edu.tw");
+        			mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名成功");
+        			mail.put("content", "所有資料已報名完成");			
+                }else {
+                	mail.put("receive", MailServiceImpl.getFrom(msg));
+        			mail.put("from", "tor@csie.ntnu.edu.tw");
+        			if (errorMessage == "檔案有問題") {
+        				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案有問題");
+            			mail.put("content", "請確認CSV檔案是否有問題");
+        			}else {
+        				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名資料有誤");
+            			mail.put("content", errorMessage);
+        			}
+                }
+                
+                MailServiceImpl.sendEmail(smtp,mail);  
+                errorMessage = "";
             }
             
-            errorMessage = "";
             MailServiceImpl.setMailRead(msg, true);
         }
         folder.close(true);
@@ -121,9 +155,9 @@ public class MailParserServiceImpl implements MailParserService {
         boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
         System.out.println("是否包含附件：" + isContainerAttachment);
         
-        StringBuffer content = new StringBuffer(30);
-        MailServiceImpl.getMailTextContent(msg, content);
-        System.out.println("信件正文：" + (content.length() > 100 ? content.substring(0, 100) + "..." : content));
+//        StringBuffer content = new StringBuffer(30);
+//        MailServiceImpl.getMailTextContent(msg, content);
+//        System.out.println("信件正文：" + (content.length() > 100 ? content.substring(0, 100) + "..." : content));
         System.out.println("------------------第" + msg.getMessageNumber() + "封信件解析結束-------------------- ");
         System.out.println();
     }
@@ -156,6 +190,7 @@ public class MailParserServiceImpl implements MailParserService {
 	
 	public void deleteFile(File file) {
 		if(file.exists()) {
+			System.gc();
 			if(file.isFile()){
 				file.delete();
 			}else{
@@ -170,63 +205,66 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 	}
     
-    public void saveSingUpData(String[] SingUpdata) {    	
-    	for (String signUpValue : SingUpdata) {
-			if (signUpValue.isEmpty()) {
-				errorMessage += SingUpdata[1] + "-資料遺漏/n";
-				return;
+    public void saveSingUpData(String[] SingUpdata) {  
+    	try {
+	    	for (String signUpValue : SingUpdata) {
+				if (signUpValue.isEmpty()) {
+					errorMessage += SingUpdata[1] + "-資料遺漏" + "\r\n";
+					return;
+				}
 			}
+	    	
+	    	SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1], AES256ServiceImpl.encode(SingUpdata[2]));
+	
+	    	if (student == null) {
+	    		student = new SignUpStudents();
+	    	}
+	    	
+	    	student.setOlympic(SingUpdata[0]);	
+	    	student.setName(SingUpdata[1]);
+	    	student.setIdCard(SingUpdata[2]);
+	    	student.setSchoolName(SingUpdata[3]);
+	    	student.setGrade(SingUpdata[4]);
+	    	student.setBirthday(SingUpdata[5]);
+	    	student.setEmail(SingUpdata[6]);
+	    	student.setGender(SingUpdata[7]);
+	    	
+	    	if (checkSignUpData(student)) {
+	    		student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
+	    		student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
+	    		student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
+	    		signUpStudentsRepository.save(student);	
+	    	}else {
+	    		errorMessage += "\r\n";
+	    	}
+    	}catch (Exception e) {
+    		errorMessage = "檔案有問題";
 		}
-    	
-    	SignUpStudents student = student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1], AES256ServiceImpl.encode(SingUpdata[2]));
-
-    	if (student == null) {
-    		student = new SignUpStudents();
-    	}
-    	
-    	student.setOlympic(SingUpdata[0]);	
-    	student.setName(SingUpdata[1]);
-    	student.setIdCard(SingUpdata[2]);
-    	student.setSchoolName(SingUpdata[3]);
-    	student.setGrade(SingUpdata[4]);
-    	student.setBirthday(SingUpdata[5]);
-    	student.setEmail(SingUpdata[6]);
-    	student.setGender(SingUpdata[7]);
-    	
-    	if (checkSignUpData(student)) {
-    		student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
-    		student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
-    		student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
-    		signUpStudentsRepository.save(student);
-    	}else {
-    		System.out.println(errorMessage);
-    	}
 
     }
     
     public Boolean checkSignUpData(SignUpStudents student) {
     	Boolean status = true;
-    	
-    	errorMessage = student.getName() + "-";
+    	String error = "";
 
     	if (!Verify.checkIdCard(student.getIdCard())) {
     		status = false;
-    		errorMessage += "身分證有誤;";
+    		error += "身分證有誤;";
     	}
     	
     	if (!Verify.checkValue(Integer.parseInt(student.getGrade()), 7, 12)) {
     		status = false;
-    		errorMessage += "年級有誤;";
+    		error += "年級有誤;";
     	}
     	
     	if (!Verify.checkDate(student.getBirthday())) {
     		status = false;
-    		errorMessage += "出生日期有誤;";
+    		error += "出生日期有誤;";
     	}
 
     	if (!Verify.checkEmail(student.getEmail())) {
     		status = false;
-    		errorMessage += "信箱有誤;";
+    		error += "信箱有誤;";
     	}
     	
 
@@ -234,6 +272,14 @@ public class MailParserServiceImpl implements MailParserService {
 //    		status = false;
 //    		errorMessage += "性別有誤;";
 //    	}
+    	
+    	if (!status) {
+    		if (errorMessage == null) {
+    			errorMessage = student.getName() + "-" + error;
+    		}else {
+    			errorMessage += student.getName() + "-" + error;
+    		}
+    	}
     	
     	return status;
     }

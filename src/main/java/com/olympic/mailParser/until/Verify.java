@@ -2,6 +2,8 @@ package com.olympic.mailParser.until;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
@@ -43,9 +45,13 @@ public class Verify {
 	public Boolean checkEmail (String email) {
 		Boolean status = false;
 		
-		String format = "\\p{Alpha}\\w{2,15}[@][a-z0-9]{3,}[.]\\p{Lower}{2,}";
+		String regx = "^[A-Za-z0-9+_.-]+@(.+)$";
 		
-		if (email.matches(format)){ 
+		Pattern pattern = Pattern.compile(regx);
+		
+		Matcher matcher = pattern.matcher(email);
+		
+		if (matcher.matches()) {
 			status = true;
 		}
 		

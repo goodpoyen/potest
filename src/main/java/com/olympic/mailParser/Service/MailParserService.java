@@ -2,8 +2,10 @@ package com.olympic.mailParser.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 
 import com.opencsv.exceptions.CsvException;
 import com.sun.mail.imap.IMAPFolder;
@@ -19,6 +21,8 @@ public interface MailParserService {
 	IMAPStore mailConnectIMAP () throws Exception;
 	
 	IMAPFolder getIMAPFolder (IMAPStore store) throws Exception;
+	
+	HashMap<String, String> getSmtp ();
 	
     void parseMessagePOP3(POP3Store stroe, POP3Folder folder) throws MessagingException, IOException, CsvException;
     
