@@ -5,18 +5,23 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 
-import javax.mail.Flags;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.olympic.mailParser.DAO.Entity.SignUpStudents;
-import com.olympic.mailParser.DAO.Repository.SignUpStudentsRepository;
 import com.olympic.mailParser.Service.MailParserService;
+import com.olympic.mailParser.until.Verify;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvValidationException;
@@ -28,11 +33,22 @@ import com.sun.mail.pop3.POP3Store;
 @Service
 public class MailParserServiceImpl implements MailParserService {
 	
-	@Autowired
-    private  SignUpStudentsRepository signUpStudentsRepository;
+	@Value("${mailFilePath}")
+	private String mailFilePath;
 	
 	@Autowired
 	private MailServiceImpl MailServiceImpl;
+	
+	@Autowired
+	private Verify Verify;
+	
+	@Autowired
+	private AES256ServiceImpl rowData;
+	
+	@Autowired
+	private TOISignUpServiceImpl TOISignUpServiceImpl;
+	
+	private String errorMessage;
 	
 	
 	public POP3Store mailConnectPOP3 () throws Exception {
@@ -49,6 +65,16 @@ public class MailParserServiceImpl implements MailParserService {
 	
 	public IMAPFolder getIMAPFolder (IMAPStore store) throws Exception {
 		return MailServiceImpl.getIMAPFolder(store);
+	}
+	
+	public HashMap<String, String> getSmtp () {
+		HashMap<String, String> smtp = new HashMap<String, String>();
+		
+		smtp.put("host", "mail.csie.ntnu.edu.tw");
+		smtp.put("username", "tor@csie.ntnu.edu.tw");
+		smtp.put("password", "tor@CSIE@6690");
+		
+		return smtp;
 	}
 	
 	/**
@@ -73,29 +99,49 @@ public class MailParserServiceImpl implements MailParserService {
         for (int i = 0, count = messages.length; i < count; i++) {
             MimeMessage msg = (MimeMessage) messages[i];
             
-            if (MailServiceImpl.getSubject(msg).contains("奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
-//            if (MailServiceImpl.getSubject(msg).contains("奧林匹克") ) {
-            	System.out.println("------------------解析第" + msg.getMessageNumber() + "封信件-------------------- ");
-                System.out.println("主旨: " + MailServiceImpl.getSubject(msg));
-                System.out.println("發件人: " + MailServiceImpl.getFrom(msg));
-                System.out.println("收件人：" + MailServiceImpl.getReceiveAddress(msg, null));
-                System.out.println("發送時間：" + MailServiceImpl.getSentDate(msg, null));
-                System.out.println("是否已讀：" + MailServiceImpl.isSeen(msg));
-                System.out.println("信件優先等級."+ "：" + MailServiceImpl.getPriority(msg));
-                System.out.println("信件大小：" + msg.getSize() * 1024 + "kb");
+//            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
+            if (Verify.checkSubject(MailServiceImpl.getSubject(msg))) {
+//            if (MailServiceImpl.getSubject(msg).contains("[TOI]加密") ) {
+   
+            	mailMessages(msg);
+            	
                 boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
-                System.out.println("是否包含附件：" + isContainerAttachment);
+
                 if (isContainerAttachment) {
-                	fileName = MailServiceImpl.saveAttachment(msg, "C:\\testData\\");   
+                	fileName = MailServiceImpl.saveAttachment(msg, mailFilePath);   
                 }
-                StringBuffer content = new StringBuffer(30);
-                MailServiceImpl.getMailTextContent(msg, content);
-                System.out.println("信件正文：" + (content.length() > 100 ? content.substring(0, 100) + "..." : content));
-                System.out.println("------------------第" + msg.getMessageNumber() + "封信件解析結束-------------------- ");
-                System.out.println();
                 
-                fileReader(fileName);
-                deleteFile(new File("C:\\testData\\" + fileName));
+                fileReader(fileName, msg);
+//                fileReader1(fileName, msg);
+                deleteFile(new File(mailFilePath + fileName));
+                
+                HashMap<String, String> smtp = getSmtp();
+                HashMap<String, String> mail = new HashMap<String, String>();
+                
+                if (errorMessage == null || "".equals(errorMessage)) {
+                	mail.put("receive", MailServiceImpl.getFrom(msg));
+        			mail.put("from", "tor@csie.ntnu.edu.tw");
+        			mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名成功");
+        			mail.put("content", "所有資料已報名完成");			
+                }else {
+                	mail.put("receive", MailServiceImpl.getFrom(msg));
+        			mail.put("from", "tor@csie.ntnu.edu.tw");
+        			if (errorMessage == "檔案有問題") {
+        				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案有問題");
+            			mail.put("content", "請確認CSV檔案是否有問題");
+        			}
+        			else if (errorMessage == "檔案加密有問題") {
+        				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案加密有問題");
+            			mail.put("content", "請確認加密鑰匙是否有誤");
+        			}
+        			else {
+        				mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名資料有誤");
+            			mail.put("content", errorMessage);
+        			}
+                }
+                
+                MailServiceImpl.sendEmail(smtp,mail);  
+                errorMessage = "";
             }
             
             MailServiceImpl.setMailRead(msg, true);
@@ -103,9 +149,67 @@ public class MailParserServiceImpl implements MailParserService {
         folder.close(true);
         stroe.close();
     }
+    
+    public void mailMessages (MimeMessage msg) throws MessagingException, IOException {
+    	System.out.println("------------------解析第" + msg.getMessageNumber() + "封信件-------------------- ");
+        System.out.println("主旨: " + MailServiceImpl.getSubject(msg));
+        System.out.println("發件人: " + MailServiceImpl.getFrom(msg));
+        System.out.println("收件人：" + MailServiceImpl.getReceiveAddress(msg, null));
+        System.out.println("發送時間：" + MailServiceImpl.getSentDate(msg, null));
+        System.out.println("是否已讀：" + MailServiceImpl.isSeen(msg));
+        System.out.println("信件優先等級."+ "：" + MailServiceImpl.getPriority(msg));
+        System.out.println("信件大小：" + msg.getSize() * 1024 + "kb");
+        
+        boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
+        System.out.println("是否包含附件：" + isContainerAttachment);
+        
+//        StringBuffer content = new StringBuffer(30);
+//        MailServiceImpl.getMailTextContent(msg, content);
+//        System.out.println("信件正文：" + (content.length() > 100 ? content.substring(0, 100) + "..." : content));
+        System.out.println("------------------第" + msg.getMessageNumber() + "封信件解析結束-------------------- ");
+        System.out.println();
+    }
 
-	public void fileReader(String fileName) {
-        String filePath = "C:\\testData\\" + fileName;
+    public void fileReader1(String fileName, MimeMessage msg) throws IOException {
+        String filePath = mailFilePath + fileName;
+        
+        Path path = Paths.get(filePath);
+        String content = Files.readString(path);
+        
+        rowData.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
+        
+        content = rowData.decode(content);
+        
+        if (content == null) {
+        	errorMessage = "檔案加密有問題";
+        	return;
+        }
+        
+        FileInputStream fileInputStream;
+		try {
+			CSVReader csvReader = new CSVReader(new StringReader(content));
+
+    		String[] nextRecord;
+    		int line = 0;
+            while ((nextRecord = csvReader.readNext()) != null) {
+
+            	if (line != 0) {
+            		saveSingUpData(nextRecord, msg);
+            		if (errorMessage == "檔案有問題") {
+            			break;
+            		}
+            	}
+                
+                line ++;
+            }
+		} catch (CsvValidationException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    public void fileReader(String fileName, MimeMessage msg) {
+        String filePath = mailFilePath + fileName;
         
         FileInputStream fileInputStream;
 		try {
@@ -119,11 +223,10 @@ public class MailParserServiceImpl implements MailParserService {
             while ((nextRecord = csvReader.readNext()) != null) {
 
             	if (line != 0) {
-            		saveSingUpData(nextRecord);
-//	            		for(String s : nextRecord)
-//	        				if(null != s && !s.equals(""))
-//	        					
-//	        					System.out.print(s);
+            		saveSingUpData(nextRecord, msg);
+            		if (errorMessage == "檔案有問題") {
+            			break;
+            		}
             	}
                 
                 line ++;
@@ -136,6 +239,7 @@ public class MailParserServiceImpl implements MailParserService {
 	
 	public void deleteFile(File file) {
 		if(file.exists()) {
+			System.gc();
 			if(file.isFile()){
 				file.delete();
 			}else{
@@ -150,19 +254,39 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 	}
     
-    public void saveSingUpData(String[] SingUpdata) {    	
-    	SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[0], SingUpdata[1]);
+    public void saveSingUpData(String[] SingUpdata, MimeMessage msg) {  
+    	for (String signUpValue : SingUpdata) {
+			if (signUpValue.isEmpty()) {
+				errorMessage += SingUpdata[1] + "-資料遺漏" + "\r\n";
+				return;
+			}
+		}
     	
-    	if (student == null) {
-    		SignUpStudents SignUpStudents = new SignUpStudents();
-    		
-        	SignUpStudents.setName(SingUpdata[0]);
-        	SignUpStudents.setIdCard(SingUpdata[1]);
-        	
-        	signUpStudentsRepository.save(SignUpStudents);
-    	}else {
-    		signUpStudentsRepository.save(student);
-    	}
-        
+    	if (errorMessage == null || "".equals(errorMessage)) {
+			errorMessage = switchOlympic(SingUpdata, msg);
+		}else {
+			errorMessage += switchOlympic(SingUpdata, msg);
+		}
+    }
+    
+    public String switchOlympic (String[] SingUpdata, MimeMessage msg) {
+    	String type = "";
+    	
+    	try {
+			type = Verify.checkOlympic(MailServiceImpl.getSubject(msg));
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	switch(type) { 
+	        case "TOI":
+	        	return TOISignUpServiceImpl.save(SingUpdata);
+	        default: 
+	            return "55"; 
+	    }
     }
 }

@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Properties;
 
 import javax.mail.Address;
@@ -21,7 +22,9 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Part;
+import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
@@ -374,4 +377,36 @@ public class MailServiceImpl implements MailService {
             return MimeUtility.decodeText(encodeText);
         }
     }
+    
+    public void sendEmail (HashMap<String, String> smtp, HashMap<String, String> mail) {
+        Properties props = new Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", smtp.get("host"));
+        props.put("mail.smtp.port", "25");
+
+        Session session = Session.getInstance(props,
+           new javax.mail.Authenticator() {
+              protected PasswordAuthentication getPasswordAuthentication() {
+                 return new PasswordAuthentication(smtp.get("username"), smtp.get("password"));
+  	   }
+           });
+
+        try {
+	  	   Message message = new MimeMessage(session);
+	  	
+	  	   message.setFrom(new InternetAddress(mail.get("from")));
+	  	
+	  	   message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(mail.get("receive")));
+	  	
+	  	   message.setSubject(mail.get("subject"));
+
+	  	   message.setText(mail.get("content"));
+
+	  	   Transport.send(message);
+
+        } catch (MessagingException e) {
+           throw new RuntimeException(e);
+        }
+     }
 }

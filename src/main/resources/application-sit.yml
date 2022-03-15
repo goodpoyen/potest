@@ -1,4 +1,4 @@
-mailFilePath: C:\testData\
+mailFilePath: /workingSpace/
 
 spring:
   datasource:

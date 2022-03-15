@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -50,4 +51,6 @@ public interface  MailService  {
     String saveFile(InputStream is, String destDir, String fileName) throws FileNotFoundException, IOException, CsvValidationException;
     
     String decodeText(String encodeText) throws UnsupportedEncodingException;
+    
+    void sendEmail (HashMap<String, String> smtp, HashMap<String, String> mail);
 }
