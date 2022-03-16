@@ -10,7 +10,11 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -20,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
 import com.olympic.mailParser.Service.MailParserService;
 import com.olympic.mailParser.until.Verify;
 import com.opencsv.CSVReader;
@@ -48,7 +53,12 @@ public class MailParserServiceImpl implements MailParserService {
 	@Autowired
 	private TOISignUpServiceImpl TOISignUpServiceImpl;
 	
+	@Autowired
+    private  OlympicScheduleRepository OlympicScheduleRepository;
+	
 	private String errorMessage;
+	
+	private String  olyId;
 	
 	
 	public POP3Store mailConnectPOP3 () throws Exception {
@@ -91,6 +101,11 @@ public class MailParserServiceImpl implements MailParserService {
     public void parseMessageIMAP(IMAPStore stroe, IMAPFolder folder) throws MessagingException, IOException, CsvException {
     	Message[] messages = folder.getMessages();
     	
+    	HashMap<String, String> smtp = getSmtp();
+        HashMap<String, String> mail = new HashMap<String, String>();
+        
+        mail.put("from", "tor@csie.ntnu.edu.tw");
+    	
     	String fileName = "";
         if (messages == null || messages.length < 1)
             throw new MessagingException("未找到要解析的!");
@@ -99,10 +114,10 @@ public class MailParserServiceImpl implements MailParserService {
         for (int i = 0, count = messages.length; i < count; i++) {
             MimeMessage msg = (MimeMessage) messages[i];
             
-//            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞") && !MailServiceImpl.isSeen(msg)) {
-            if (Verify.checkSubject(MailServiceImpl.getSubject(msg))) {
+            olyId = getOlympicSchedule(MailServiceImpl.getSubject(msg));
 //            if (MailServiceImpl.getSubject(msg).contains("[TOI]加密") ) {
-   
+//            if (!"".equals(olyId) && olyId != null && !MailServiceImpl.isSeen(msg)) {
+            if (!"".equals(olyId) && olyId != null) {
             	mailMessages(msg);
             	
                 boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
@@ -115,12 +130,8 @@ public class MailParserServiceImpl implements MailParserService {
 //                fileReader1(fileName, msg);
                 deleteFile(new File(mailFilePath + fileName));
                 
-                HashMap<String, String> smtp = getSmtp();
-                HashMap<String, String> mail = new HashMap<String, String>();
-                
                 if (errorMessage == null || "".equals(errorMessage)) {
                 	mail.put("receive", MailServiceImpl.getFrom(msg));
-        			mail.put("from", "tor@csie.ntnu.edu.tw");
         			mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名成功");
         			mail.put("content", "所有資料已報名完成");			
                 }else {
@@ -168,6 +179,32 @@ public class MailParserServiceImpl implements MailParserService {
 //        System.out.println("信件正文：" + (content.length() > 100 ? content.substring(0, 100) + "..." : content));
         System.out.println("------------------第" + msg.getMessageNumber() + "封信件解析結束-------------------- ");
         System.out.println();
+    }
+    
+    public String getOlympicSchedule (String subject) {   	
+    	if (Verify.checkSubject(subject)){
+    		String olyId = "";
+    		
+    		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+    		
+    		String type = Verify.checkOlympic(subject);
+    		
+    		subject = subject.replace("[" + type + "]" + "奧林匹亞", ""); 
+    		
+    		List<Map<String,Object>> schedule = OlympicScheduleRepository.getOlympicSchedule(subject, dtf.format(LocalDateTime.now()).toString());
+    		
+    		for(Map<String,Object> data : schedule){    
+                for(String key : data.keySet()){
+                	if (key.equals("oly_id")) {
+                		olyId = data.get(key).toString();
+                	}
+                }
+            }
+    		
+    		return olyId;
+    	}else {
+    		return "";
+    	}
     }
 
     public void fileReader1(String fileName, MimeMessage msg) throws IOException {
@@ -284,7 +321,7 @@ public class MailParserServiceImpl implements MailParserService {
     	
     	switch(type) { 
 	        case "TOI":
-	        	return TOISignUpServiceImpl.save(SingUpdata);
+	        	return TOISignUpServiceImpl.save(SingUpdata, olyId, msg);
 	        default: 
 	            return "55"; 
 	    }

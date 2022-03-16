@@ -20,6 +20,9 @@ public class SignUpStudents {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "st_id")
     public  Integer stId;
+    
+    @Column(name = "oly_id")
+    public  String olyId;
 
     @Column(name = "name")
     public  String name;
@@ -44,5 +47,8 @@ public class SignUpStudents {
     
     @Column (name = "gender")
     public String gender;
+    
+    @Column (name = "creater")
+    public String creater;
 
 }

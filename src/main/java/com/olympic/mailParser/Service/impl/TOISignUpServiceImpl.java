@@ -1,5 +1,7 @@
 package com.olympic.mailParser.Service.impl;
 
+import javax.mail.internet.MimeMessage;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,17 +17,21 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 	
 	@Autowired
 	private AES256ServiceImpl AES256ServiceImpl;
+	
+	@Autowired
+	private MailServiceImpl MailServiceImpl;
 
 	private String errorMessage;
 	
 	@Autowired
     private  SignUpStudentsRepository signUpStudentsRepository;
 	
-	public String save(String[] SingUpdata) {
+	public String save(String[] SingUpdata, String olyId, MimeMessage msg) {
 		errorMessage = "";
 		
     	try {
     		errorMessage = "";
+    		
     		AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
     		
 	    	SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1], AES256ServiceImpl.encode(SingUpdata[2]));
@@ -42,6 +48,8 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 	    	student.setBirthday(SingUpdata[5]);
 	    	student.setEmail(SingUpdata[6]);
 	    	student.setGender(SingUpdata[7]);
+	    	student.setCreater(MailServiceImpl.getFrom(msg));
+	    	student.setOlyId(olyId);
 	    	
 	    	if (checkSignUpData(student)) {
 	    		student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));

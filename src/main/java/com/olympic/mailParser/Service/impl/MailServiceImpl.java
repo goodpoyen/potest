@@ -105,25 +105,10 @@ public class MailServiceImpl implements MailService {
         return  folder;
     }
     
-
-    /**
-     * 取得信件主旨
-     *
-     * @param msg 信件內容
-     * @return 解碼後的信件主旨
-     */
     public  String getSubject(MimeMessage msg) throws UnsupportedEncodingException, MessagingException {
         return MimeUtility.decodeText(msg.getSubject());
     }
 
-    /**
-     * 取得發送人
-     *
-     * @param msg 信件內容
-     * @return 姓名 <Email地址>
-     * @throws MessagingException
-     * @throws UnsupportedEncodingException
-     */
     public  String getFrom(MimeMessage msg) throws MessagingException, UnsupportedEncodingException {
         String from = "";
         Address[] froms = msg.getFrom();
@@ -131,28 +116,17 @@ public class MailServiceImpl implements MailService {
             throw new MessagingException("沒有發送人!");
 
         InternetAddress address = (InternetAddress) froms[0];
-        String person = address.getPersonal();
-        if (person != null) {
-            person = MimeUtility.decodeText(person) + " ";
-        } else {
-            person = "";
-        }
-        from = person + "<" + address.getAddress() + ">";
+//        String person = address.getPersonal();
+//        if (person != null) {
+//            person = MimeUtility.decodeText(person) + " ";
+//        } else {
+//            person = "";
+//        }
+//        from = person + "<" + address.getAddress() + ">";
 
-        return from;
+        return address.getAddress();
     }
 
-    /**
-     * 根據收件人類型，獲取信件收件人、抄送和密送地址。如果收件人類型為空，則獲得所有的收件人
-     * <p>Message.RecipientType.TO  收件人</p>
-     * <p>Message.RecipientType.CC  副本</p>
-     * <p>Message.RecipientType.BCC 密件副本</p>
-     *
-     * @param msg  信件内容
-     * @param type 收件人類型
-     * @return 收件人1 <信件地址1>, 收件人2 <信件地址2>, ...
-     * @throws MessagingException
-     */
     public String getReceiveAddress(MimeMessage msg, Message.RecipientType type) throws MessagingException {
         StringBuffer receiveAddress = new StringBuffer();
         Address[] addresss = null;
@@ -174,13 +148,6 @@ public class MailServiceImpl implements MailService {
         return receiveAddress.toString();
     }
 
-    /**
-     * 取得信件發送時間
-     *
-     * @param msg 信件內容
-     * @return yyyy年mm月dd日 星期X HH:mm
-     * @throws MessagingException
-     */
     public String getSentDate(MimeMessage msg, String pattern) throws MessagingException {
         if (msg.getSentDate() == null)
             return "";
@@ -191,13 +158,6 @@ public class MailServiceImpl implements MailService {
         return new SimpleDateFormat(pattern).format(msg.getSentDate());
     }
 
-    /**
-     * 判斷是否有附件
-     *
-     * @return 信件中存在附件返回true，不存在返回false
-     * @throws MessagingException
-     * @throws IOException
-     */
     public boolean isContainAttachment(Part part) throws MessagingException, IOException {
         boolean flag = false;
         if (part.isMimeType("multipart/*")) {
@@ -229,24 +189,10 @@ public class MailServiceImpl implements MailService {
         return flag;
     }
 
-    /**
-     * 判断信件是否已讀
-     *
-     * @param msg 信件内容
-     * @return 如果信件已讀返回true, 否则返回false
-     * @throws MessagingException
-     */
     public boolean isSeen(MimeMessage msg) throws MessagingException {
         return msg.getFlags().contains(Flags.Flag.SEEN);
     }
 
-    /**
-     * 取得信件優先等級
-     *
-     * @param msg 信件內容
-     * @return 1(High):緊急  3:普通(Normal)  5:低(Low)
-     * @throws MessagingException
-     */
     public String getPriority(MimeMessage msg) throws MessagingException {
         String priority = "普通";
         String[] headers = msg.getHeader("X-Priority");
@@ -262,14 +208,6 @@ public class MailServiceImpl implements MailService {
         return priority;
     }
 
-    /**
-     * 取得信件文本内容
-     *
-     * @param part    信件
-     * @param content 存储信件文本内容的字符串
-     * @throws MessagingException
-     * @throws IOException
-     */
     public void getMailTextContent(Part part, StringBuffer content) throws MessagingException, IOException {
         //如果是文本類型的附件，通過getContent方法可以取到文本內容，但這不是我們需要的結果，所以在這裡要做判斷
         boolean isContainTextAttach = part.getContentType().indexOf("name") > 0;
@@ -287,24 +225,10 @@ public class MailServiceImpl implements MailService {
         }
     }
     
-    /**
-     * 設定信件讀取狀態
-     */
     public void setMailRead(MimeMessage msg, Boolean flag) throws MessagingException {
     	msg.setFlag(Flags.Flag.SEEN, flag);
     }
 
-    /**
-     * 保存附件
-     *
-     * @param part    信件中多個組合體中的其中一個組合體
-     * @param destDir 附近檔案路徑
-     * @throws UnsupportedEncodingException
-     * @throws MessagingException
-     * @throws FileNotFoundException
-     * @throws IOException
-     * @throws CsvValidationException 
-     */
     public String saveAttachment(Part part, String destDir) throws UnsupportedEncodingException, MessagingException,
             FileNotFoundException, IOException, CsvValidationException {
         if (part.isMimeType("multipart/*")) {
@@ -336,16 +260,6 @@ public class MailServiceImpl implements MailService {
 		return destDir;
     }
 
-    /**
-     * 儲存附件檔案
-     *
-     * @param is       輸入
-     * @param fileName 檔案名稱
-     * @param destDir  檔案路徑
-     * @throws FileNotFoundException
-     * @throws IOException
-     * @throws CsvValidationException 
-     */
     public String saveFile(InputStream is, String destDir, String fileName) throws FileNotFoundException, IOException, CsvValidationException {
     	DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
     	
@@ -363,13 +277,6 @@ public class MailServiceImpl implements MailService {
         return dtf.format(LocalDateTime.now()).hashCode()+".csv";
     }
 
-    /**
-     * 內容解碼
-     *
-     * @param encodeText 解碼MimeUtility.encodeText(String text)方法編碼後的內容
-     * @return 解碼後的內容
-     * @throws UnsupportedEncodingException
-     */
     public String decodeText(String encodeText) throws UnsupportedEncodingException {
         if (encodeText == null || "".equals(encodeText)) {
             return "";
