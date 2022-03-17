@@ -26,7 +26,7 @@ import org.springframework.stereotype.Service;
 
 import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
 import com.olympic.mailParser.Service.MailParserService;
-import com.olympic.mailParser.until.Verify;
+import com.olympic.mailParser.utils.Verify;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvValidationException;

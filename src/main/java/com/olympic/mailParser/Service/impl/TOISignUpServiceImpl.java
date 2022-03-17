@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import com.olympic.mailParser.DAO.Entity.SignUpStudents;
 import com.olympic.mailParser.DAO.Repository.SignUpStudentsRepository;
 import com.olympic.mailParser.Service.TOISignUpService;
-import com.olympic.mailParser.until.Verify;
+import com.olympic.mailParser.utils.Verify;
 
 @Service
 public class TOISignUpServiceImpl implements TOISignUpService {

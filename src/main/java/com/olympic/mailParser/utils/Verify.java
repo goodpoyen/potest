@@ -1,4 +1,4 @@
-package com.olympic.mailParser.until;
+package com.olympic.mailParser.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -91,17 +91,5 @@ public class Verify {
 		}
 			
 		return "";
-	}
-	
-	public Boolean checkPassword (String password) {
-		Boolean status = false;
-
-		String passwordPattern = "^(?![0-9A-Za-z]+$)(?![\\W]+$)(?![A-Za-z\\W]+$)(?![0-9\\W]+$)(?![A-Za-z\\W]+$)(?![A-Z0-9\\W]+$)(?![a-z0-9\\W]+$)(?![a-zA-A\\W]+$)(?![0-9\\W]+$)[0-9A-Za-z\\W]{8,16}$";
-		
-		if (password.matches(passwordPattern)) {
-			status = true;
-		}
-		
-		return status;
 	}
 }
