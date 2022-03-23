@@ -3,6 +3,7 @@ package com.olympic.mailParser.Service.impl;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.stereotype.Service;
 
 import com.olympic.mailParser.Service.AES256Service;
@@ -16,9 +17,6 @@ public class AES256ServiceImpl implements AES256Service{
     private static byte[] KEY_VI = "".getBytes();
 
     private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS7Padding";
- 
-    private static java.util.Base64.Decoder base64Decoder = java.util.Base64.getMimeDecoder();
-    private static java.util.Base64.Encoder base64Encoder = java.util.Base64.getMimeEncoder();
  
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -39,7 +37,7 @@ public class AES256ServiceImpl implements AES256Service{
 
             byte[] byteAES = cipher.doFinal(byteEncode);
 
-            return base64Encoder.encodeToString(byteAES);
+            return Hex.toHexString(byteAES);
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
@@ -52,7 +50,7 @@ public class AES256ServiceImpl implements AES256Service{
             javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, new javax.crypto.spec.IvParameterSpec(KEY_VI));
 
-	        byte[] byteContent = base64Decoder.decode(content);
+            byte[] byteContent = Hex.decodeStrict(content);
 
 	        byte[] byteDecode = cipher.doFinal(byteContent);
 	        return new String(byteDecode, java.nio.charset.StandardCharsets.UTF_8);
