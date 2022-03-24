@@ -11,11 +11,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableJpaRepositories
 public class MailParserApplication extends SpringBootServletInitializer {
-	
+
 	@Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(MailParserApplication.class);
-    }
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(MailParserApplication.class);
+	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(MailParserApplication.class, args);

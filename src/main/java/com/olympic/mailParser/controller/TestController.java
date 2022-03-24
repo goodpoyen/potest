@@ -17,18 +17,18 @@ import com.sun.mail.imap.IMAPStore;
 
 @RestController
 public class TestController {
-	
-	@Autowired 
-	MailParserServiceImpl MailParserServiceImpl;
-	
+
 	@Autowired
-    private  OlympicScheduleRepository OlympicScheduleRepository;
-	
+	MailParserServiceImpl MailParserServiceImpl;
+
+	@Autowired
+	private OlympicScheduleRepository OlympicScheduleRepository;
+
 	@Autowired
 	private Verify Verify;
-	
+
 	@GetMapping("/test")
-	public String home () throws Exception {
+	public String home() throws Exception {
 //		IMAPStore store = MailParserServiceImpl.mailConnectIMAP();
 //		IMAPFolder folder = MailParserServiceImpl.getIMAPFolder(store);
 //		
@@ -36,16 +36,16 @@ public class TestController {
 
 		return "finish";
 	}
-	
+
 	@GetMapping("/hello")
-	public String hello () throws Exception {
+	public String hello() throws Exception {
 
 		return "hello word3";
 	}
-	
+
 	@GetMapping("/db")
-	public String db () throws Exception {
-		
+	public String db() throws Exception {
+
 //		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 //		
 //		List<Map<String,Object>> schedule = OlympicScheduleRepository.getOlympicSchedule("[TOI]奧林匹亞-022初選", dtf.format(LocalDateTime.now()).toString());
@@ -58,7 +58,7 @@ public class TestController {
 //                System.out.println(m.get(s));
 //            }
 //        }
-		
+
 //		System.out.println(schedule.getSignupName());
 
 		return "db test";

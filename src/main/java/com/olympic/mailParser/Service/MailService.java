@@ -18,39 +18,40 @@ import com.sun.mail.imap.IMAPStore;
 import com.sun.mail.pop3.POP3Folder;
 import com.sun.mail.pop3.POP3Store;
 
-public interface  MailService  {
+public interface MailService {
 	POP3Store mailConnectPOP3(String host, String mail, String pass) throws Exception;
-	
-	POP3Folder getPOP3Folder (POP3Store store) throws MessagingException;
-	
+
+	POP3Folder getPOP3Folder(POP3Store store) throws MessagingException;
+
 	IMAPStore mailConnectIMAP(String host, String mail, String pass) throws Exception;
-	
-	IMAPFolder getIMAPFolder (IMAPStore store) throws MessagingException;
 
-    String getSubject(MimeMessage msg) throws UnsupportedEncodingException, MessagingException;
-    
-    String getFrom(MimeMessage msg) throws MessagingException, UnsupportedEncodingException;
+	IMAPFolder getIMAPFolder(IMAPStore store) throws MessagingException;
 
-    String getReceiveAddress(MimeMessage msg, Message.RecipientType type) throws MessagingException;
-    
-    String getSentDate(MimeMessage msg, String pattern) throws MessagingException;
-    
-    boolean isContainAttachment(Part part) throws MessagingException, IOException;
-    
-    boolean isSeen(MimeMessage msg) throws MessagingException;
-    
-    String getPriority(MimeMessage msg) throws MessagingException;
-    
-    void getMailTextContent(Part part, StringBuffer content) throws MessagingException, IOException;
-    
-    void setMailRead(MimeMessage msg, Boolean flag) throws MessagingException;
-    
-    String saveAttachment(Part part, String destDir) throws UnsupportedEncodingException, MessagingException,
-    FileNotFoundException, IOException, CsvValidationException;
-    
-    String saveFile(InputStream is, String destDir, String fileName) throws FileNotFoundException, IOException, CsvValidationException;
-    
-    String decodeText(String encodeText) throws UnsupportedEncodingException;
-    
-    void sendEmail (HashMap<String, String> smtp, HashMap<String, String> mail);
+	String getSubject(MimeMessage msg) throws UnsupportedEncodingException, MessagingException;
+
+	String getFrom(MimeMessage msg) throws MessagingException, UnsupportedEncodingException;
+
+	String getReceiveAddress(MimeMessage msg, Message.RecipientType type) throws MessagingException;
+
+	String getSentDate(MimeMessage msg, String pattern) throws MessagingException;
+
+	boolean isContainAttachment(Part part) throws MessagingException, IOException;
+
+	boolean isSeen(MimeMessage msg) throws MessagingException;
+
+	String getPriority(MimeMessage msg) throws MessagingException;
+
+	void getMailTextContent(Part part, StringBuffer content) throws MessagingException, IOException;
+
+	void setMailRead(MimeMessage msg, Boolean flag) throws MessagingException;
+
+	String saveAttachment(Part part, String destDir) throws UnsupportedEncodingException, MessagingException,
+			FileNotFoundException, IOException, CsvValidationException;
+
+	String saveFile(InputStream is, String destDir, String fileName)
+			throws FileNotFoundException, IOException, CsvValidationException;
+
+	String decodeText(String encodeText) throws UnsupportedEncodingException;
+
+	void sendEmail(HashMap<String, String> smtp, HashMap<String, String> mail);
 }

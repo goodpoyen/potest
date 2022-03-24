@@ -16,19 +16,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class OlympicSchedule {
 	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "oly_id")
-    public  Integer olyId;
-	
-	@Column(name = "olympic")
-    public  String olympic;
-	
-    @Column(name = "signup_name")
-    public  String signupName;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "oly_id")
+	public Integer olyId;
 
-    @Column (name = "start")
-    public String start;
-    
-    @Column (name = "end")
-    public String end;
+	@Column(name = "olympic")
+	public String olympic;
+
+	@Column(name = "signup_name")
+	public String signupName;
+
+	@Column(name = "start")
+	public String start;
+
+	@Column(name = "end")
+	public String end;
 }
