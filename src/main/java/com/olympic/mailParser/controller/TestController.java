@@ -34,7 +34,7 @@ public class TestController {
 //		
 //		MailParserServiceImpl.parseMessageIMAP(store, folder);
 
-		return "finish";
+		return "finish-marks";
 	}
 
 	@GetMapping("/hello")

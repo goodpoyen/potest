@@ -8,6 +8,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -110,7 +112,7 @@ public class MailServiceImpl implements MailService {
 	}
 
 	public String getFrom(MimeMessage msg) throws MessagingException, UnsupportedEncodingException {
-		String from = "";
+//		String from = "";
 		Address[] froms = msg.getFrom();
 		if (froms.length < 1)
 			throw new MessagingException("沒有發送人!");
@@ -264,6 +266,12 @@ public class MailServiceImpl implements MailService {
 	public String saveFile(InputStream is, String destDir, String fileName)
 			throws FileNotFoundException, IOException, CsvValidationException {
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+		
+		File filePath = new File (destDir);
+		
+		if (!filePath.exists()) {
+			Files.createDirectories(Paths.get(destDir));
+		}
 
 		BufferedInputStream bis = new BufferedInputStream(is);
 		BufferedOutputStream bos = new BufferedOutputStream(

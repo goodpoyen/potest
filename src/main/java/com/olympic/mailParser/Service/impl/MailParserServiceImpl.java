@@ -5,11 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -46,9 +42,6 @@ public class MailParserServiceImpl implements MailParserService {
 
 	@Autowired
 	private Verify Verify;
-
-	@Autowired
-	private AES256ServiceImpl rowData;
 
 	@Autowired
 	private TOISignUpServiceImpl TOISignUpServiceImpl;
@@ -128,7 +121,6 @@ public class MailParserServiceImpl implements MailParserService {
 				}
 
 				fileReader(fileName, msg);
-//                fileReader1(fileName, msg);
 				deleteFile(new File(mailFilePath + fileName));
 
 				if (errorMessage == null || "".equals(errorMessage)) {
@@ -207,44 +199,6 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 	}
 
-	public void fileReader1(String fileName, MimeMessage msg) throws IOException {
-		String filePath = mailFilePath + fileName;
-
-		Path path = Paths.get(filePath);
-		String content = Files.readString(path);
-
-		rowData.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
-
-		content = rowData.decode(content);
-
-		if (content == null) {
-			errorMessage = "檔案加密有問題";
-			return;
-		}
-
-		FileInputStream fileInputStream;
-		try {
-			CSVReader csvReader = new CSVReader(new StringReader(content));
-
-			String[] nextRecord;
-			int line = 0;
-			while ((nextRecord = csvReader.readNext()) != null) {
-
-				if (line != 0) {
-					saveSingUpData(nextRecord, msg);
-					if (errorMessage == "檔案有問題") {
-						break;
-					}
-				}
-
-				line++;
-			}
-		} catch (CsvValidationException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
 	public void fileReader(String fileName, MimeMessage msg) {
 		String filePath = mailFilePath + fileName;
 
@@ -277,14 +231,6 @@ public class MailParserServiceImpl implements MailParserService {
 	public void deleteFile(File file) {
 		if (file.exists()) {
 			System.gc();
-			if (file.isFile()) {
-				file.delete();
-			} else {
-				File[] listFiles = file.listFiles();
-				for (File file2 : listFiles) {
-					deleteFile(file2);
-				}
-			}
 			file.delete();
 		} else {
 			System.out.println("該file路徑不存在！！");

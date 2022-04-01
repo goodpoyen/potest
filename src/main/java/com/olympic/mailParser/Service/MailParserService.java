@@ -30,8 +30,6 @@ public interface MailParserService {
 
 	void fileReader(String fileName, MimeMessage msg);
 
-	void fileReader1(String fileName, MimeMessage msg) throws IOException;
-
 	void deleteFile(File file);
 
 	void saveSingUpData(String[] SingUpdata, MimeMessage msg);

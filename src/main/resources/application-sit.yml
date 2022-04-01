@@ -1,4 +1,4 @@
-mailFilePath: /workingSpace/
+mailFilePath: /workingSpace/mailFile/
 
 spring:
   datasource:
