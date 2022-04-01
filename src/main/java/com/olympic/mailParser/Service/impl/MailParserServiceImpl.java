@@ -109,7 +109,7 @@ public class MailParserServiceImpl implements MailParserService {
 			MimeMessage msg = (MimeMessage) messages[i];
 
 			olyId = getOlympicSchedule(MailServiceImpl.getSubject(msg));
-//            if (MailServiceImpl.getSubject(msg).contains("[TOI]加密") ) {
+//            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞初選") ) {
 //            if (!"".equals(olyId) && olyId != null && !MailServiceImpl.isSeen(msg)) {
 			if (!"".equals(olyId) && olyId != null) {
 				mailMessages(msg);
@@ -133,9 +133,6 @@ public class MailParserServiceImpl implements MailParserService {
 					if (errorMessage == "檔案有問題") {
 						mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案有問題");
 						mail.put("content", "請確認CSV檔案是否有問題");
-					} else if (errorMessage == "檔案加密有問題") {
-						mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案加密有問題");
-						mail.put("content", "請確認加密鑰匙是否有誤");
 					} else {
 						mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名資料有誤");
 						mail.put("content", errorMessage);

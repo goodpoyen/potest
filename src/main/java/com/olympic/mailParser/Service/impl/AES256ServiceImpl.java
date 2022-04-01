@@ -1,6 +1,12 @@
 package com.olympic.mailParser.Service.impl;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Security;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
@@ -29,11 +35,11 @@ public class AES256ServiceImpl implements AES256Service {
 
 	public String encode(String content) {
 		try {
-			javax.crypto.SecretKey secretKey = new javax.crypto.spec.SecretKeySpec(DEFAULT_SECRET_KEY.getBytes(), AES);
-			javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance(CIPHER_ALGORITHM);
-			cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, secretKey, new javax.crypto.spec.IvParameterSpec(KEY_VI));
+			SecretKey secretKey = new SecretKeySpec(DEFAULT_SECRET_KEY.getBytes(), AES);
+			Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(KEY_VI));
 
-			byte[] byteEncode = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+			byte[] byteEncode = content.getBytes(StandardCharsets.UTF_8);
 
 			byte[] byteAES = cipher.doFinal(byteEncode);
 
@@ -46,14 +52,14 @@ public class AES256ServiceImpl implements AES256Service {
 
 	public String decode(String content) {
 		try {
-			javax.crypto.SecretKey secretKey = new javax.crypto.spec.SecretKeySpec(DEFAULT_SECRET_KEY.getBytes(), AES);
-			javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance(CIPHER_ALGORITHM);
-			cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, new javax.crypto.spec.IvParameterSpec(KEY_VI));
+			SecretKey secretKey = new SecretKeySpec(DEFAULT_SECRET_KEY.getBytes(), AES);
+			Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(KEY_VI));
 
 			byte[] byteContent = Hex.decodeStrict(content);
 
 			byte[] byteDecode = cipher.doFinal(byteContent);
-			return new String(byteDecode, java.nio.charset.StandardCharsets.UTF_8);
+			return new String(byteDecode, StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
