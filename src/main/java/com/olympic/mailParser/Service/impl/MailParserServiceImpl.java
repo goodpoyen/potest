@@ -1,9 +1,12 @@
 package com.olympic.mailParser.Service.impl;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
@@ -16,6 +19,8 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -48,6 +53,12 @@ public class MailParserServiceImpl implements MailParserService {
 
 	@Autowired
 	private OlympicScheduleRepository OlympicScheduleRepository;
+
+	@Autowired
+	private TikaReadFileServiceImpl TikaReadFileServiceImpl;
+
+	@Autowired
+	private OpenOfficeServiceImpl OpenOfficeServiceImpl;
 
 	private String errorMessage;
 
@@ -100,9 +111,8 @@ public class MailParserServiceImpl implements MailParserService {
 
 		mail.put("from", "tor@csie.ntnu.edu.tw");
 
-		String fileName = "";
 		if (messages == null || messages.length < 1)
-			throw new MessagingException("未找到要解析的!");
+			throw new MessagingException("未找到要解析的信件!");
 
 		// 解析所有邮件
 		for (int i = 0, count = messages.length; i < count; i++) {
@@ -117,29 +127,67 @@ public class MailParserServiceImpl implements MailParserService {
 				boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
 
 				if (isContainerAttachment) {
-					fileName = MailServiceImpl.saveAttachment(msg, mailFilePath);
-				}
 
-				fileReader(fileName, msg);
-				deleteFile(new File(mailFilePath + fileName));
+					JSONObject fileInfo = getFileType(msg);
 
-				if (errorMessage == null || "".equals(errorMessage)) {
-					mail.put("receive", MailServiceImpl.getFrom(msg));
-					mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名成功");
-					mail.put("content", "所有資料已報名完成");
-				} else {
-					mail.put("receive", MailServiceImpl.getFrom(msg));
-					mail.put("from", "tor@csie.ntnu.edu.tw");
-					if (errorMessage == "檔案有問題") {
-						mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案有問題");
-						mail.put("content", "請確認CSV檔案是否有問題");
+					if (fileInfo.getBoolean("status")) {
+
+						String fileType = fileInfo.getString("type");
+
+						String newFile = MailServiceImpl.saveAttachment(msg, mailFilePath, fileType);
+
+						JSONObject content = new JSONObject();
+
+						if (fileType.equals("xlsx") || fileType.equals("xls")) {
+							content = TikaReadFileServiceImpl.readExcelToCSV(newFile, mailFilePath, "12345");
+						} else if (fileType.equals("zip")) {
+							content = OpenOfficeServiceImpl.readODSToCSV(newFile, mailFilePath, "123456");
+						}
+
+						if (content.getBoolean("status")) {
+							createCSVFile(content.getString("file"), content.getString("text"));
+
+							fileReader(content.getString("file"), msg);
+							deleteFile(new File(mailFilePath + content.getString("file")));
+//
+//							if (errorMessage == null || "".equals(errorMessage)) {
+//								mail.put("receive", MailServiceImpl.getFrom(msg));
+//								mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名成功");
+//								mail.put("content", "所有資料已報名完成");
+//							} else {
+//								mail.put("receive", MailServiceImpl.getFrom(msg));
+//								mail.put("from", "tor@csie.ntnu.edu.tw");
+//								if (errorMessage == "檔案有問題") {
+//									mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案有問題");
+//									mail.put("content", "請確認CSV檔案是否有問題");
+//								} else {
+//									mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名資料有誤");
+//									mail.put("content", errorMessage);
+//								}
+//							}
+						} else {
+							if (content.get("msg").equals("Wrong Password")) {
+								mail.put("subject", MailServiceImpl.getSubject(msg) + "-附件檔案密碼錯誤");
+								mail.put("content", "請確認附件檔密碼是否正確");
+							} else if (content.get("msg").equals("not ods file")) {
+								mail.put("subject", MailServiceImpl.getSubject(msg) + "-壓縮檔內檔案格式不對");
+								mail.put("content", "請確認附件壓縮檔內檔案格式");
+							} else {
+								mail.put("subject", MailServiceImpl.getSubject(msg) + "-附件檔案異常");
+								mail.put("content", "附件檔案異常請重新寄送檔案");
+							}
+						}
 					} else {
-						mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名資料有誤");
-						mail.put("content", errorMessage);
+						mail.put("subject", MailServiceImpl.getSubject(msg) + "-附件檔案類型錯誤");
+						mail.put("content", "請確認附件檔案類型是否符合規定");
 					}
+
+				} else {
+					mail.put("subject", MailServiceImpl.getSubject(msg) + "-未夾帶附件檔案");
+					mail.put("content", "請確認信件是否夾帶附件檔");
 				}
 
-				MailServiceImpl.sendEmail(smtp, mail);
+//				MailServiceImpl.sendEmail(smtp, mail);
 				errorMessage = "";
 			}
 
@@ -147,6 +195,35 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 		folder.close(true);
 		stroe.close();
+	}
+
+	public void createCSVFile(String newFile, String text) throws IOException {
+		BufferedWriter out = new BufferedWriter(
+				new OutputStreamWriter(new FileOutputStream(new File(mailFilePath + newFile)), "UTF-8"));
+		out.write('\ufeff');
+		out.write(text);
+		out.flush();
+		out.close();
+	}
+
+	public JSONObject getFileType(MimeMessage msg) throws JSONException, IOException, MessagingException {
+		JSONObject result = new JSONObject();
+
+		if (MailServiceImpl.checkFileType(msg, "xlsx")) {
+			result.put("status", true);
+			result.put("type", "xlsx");
+		} else if (MailServiceImpl.checkFileType(msg, "xls")) {
+			result.put("status", true);
+			result.put("type", "xls");
+		} else if (MailServiceImpl.checkFileType(msg, "zip")) {
+			result.put("status", true);
+			result.put("type", "zip");
+		} else {
+			result.put("status", false);
+			result.put("type", "");
+		}
+
+		return result;
 	}
 
 	public void mailMessages(MimeMessage msg) throws MessagingException, IOException {

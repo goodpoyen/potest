@@ -1,6 +1,5 @@
 package com.olympic.mailParser.Service;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,13 +44,15 @@ public interface MailService {
 
 	void setMailRead(MimeMessage msg, Boolean flag) throws MessagingException;
 
-	String saveAttachment(Part part, String destDir) throws UnsupportedEncodingException, MessagingException,
-			FileNotFoundException, IOException, CsvValidationException;
+	String saveAttachment(Part part, String destDir, String fileType) throws UnsupportedEncodingException,
+			MessagingException, FileNotFoundException, IOException, CsvValidationException;
 
-	String saveFile(InputStream is, String destDir, String fileName)
+	String saveFile(InputStream is, String destDir, String fileName, String fileType)
 			throws FileNotFoundException, IOException, CsvValidationException;
 
 	String decodeText(String encodeText) throws UnsupportedEncodingException;
 
 	void sendEmail(HashMap<String, String> smtp, HashMap<String, String> mail);
+
+	Boolean checkFileType(Part part, String type) throws IOException, MessagingException;
 }

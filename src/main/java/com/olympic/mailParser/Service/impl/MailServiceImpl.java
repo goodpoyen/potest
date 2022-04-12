@@ -232,8 +232,8 @@ public class MailServiceImpl implements MailService {
 		msg.setFlag(Flags.Flag.SEEN, flag);
 	}
 
-	public String saveAttachment(Part part, String destDir) throws UnsupportedEncodingException, MessagingException,
-			FileNotFoundException, IOException, CsvValidationException {
+	public String saveAttachment(Part part, String destDir, String fileType) throws UnsupportedEncodingException,
+			MessagingException, FileNotFoundException, IOException, CsvValidationException {
 		if (part.isMimeType("multipart/*")) {
 			Multipart multipart = (Multipart) part.getContent(); // 複雜信件
 			// 含多個信件体
@@ -245,37 +245,68 @@ public class MailServiceImpl implements MailService {
 				String disp = bodyPart.getDisposition();
 				if (disp != null && (disp.equalsIgnoreCase(Part.ATTACHMENT) || disp.equalsIgnoreCase(Part.INLINE))) {
 					InputStream is = bodyPart.getInputStream();
-					fileName = saveFile(is, destDir, decodeText(bodyPart.getFileName()));
+					fileName = saveFile(is, destDir, decodeText(bodyPart.getFileName()), fileType);
 				} else if (bodyPart.isMimeType("multipart/*")) {
-					saveAttachment(bodyPart, destDir);
+					saveAttachment(bodyPart, destDir, fileType);
 				} else {
 					String contentType = bodyPart.getContentType();
 					if (contentType.indexOf("name") != -1 || contentType.indexOf("application") != -1) {
-						fileName = saveFile(bodyPart.getInputStream(), destDir, decodeText(bodyPart.getFileName()));
+						fileName = saveFile(bodyPart.getInputStream(), destDir, decodeText(bodyPart.getFileName()),
+								fileType);
 					}
 				}
 			}
 
 			return fileName;
 		} else if (part.isMimeType("message/rfc822")) {
-			saveAttachment((Part) part.getContent(), destDir);
+			saveAttachment((Part) part.getContent(), destDir, fileType);
 		}
 		return destDir;
 	}
 
-	public String saveFile(InputStream is, String destDir, String fileName)
+	public Boolean checkFileType(Part part, String type) throws IOException, MessagingException {
+		Boolean status = false;
+		Multipart multipart = (Multipart) part.getContent();
+
+		int partCount = multipart.getCount();
+		for (int i = 0; i < partCount; i++) {
+			// 取得其中一個信件
+			BodyPart bodyPart = multipart.getBodyPart(i);
+			// 取得的信件也是複雜信件
+
+			String disp = bodyPart.getDisposition();
+			if (disp != null && (disp.equalsIgnoreCase(Part.ATTACHMENT) || disp.equalsIgnoreCase(Part.INLINE))) {
+				if (bodyPart.getContentType().contains(type)) {
+					status = true;
+				}
+			} else if (bodyPart.isMimeType("multipart/*")) {
+				checkFileType(bodyPart, type);
+			} else {
+				String contentType = bodyPart.getContentType();
+				if (contentType.indexOf("name") != -1 || contentType.indexOf("application") != -1) {
+					if (bodyPart.getContentType().contains(type)) {
+						status = true;
+					}
+				}
+			}
+		}
+
+		return status;
+	}
+
+	public String saveFile(InputStream is, String destDir, String fileName, String fileType)
 			throws FileNotFoundException, IOException, CsvValidationException {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-		
-		File filePath = new File (destDir);
-		
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss:SSS");
+
+		File filePath = new File(destDir);
+
 		if (!filePath.exists()) {
 			Files.createDirectories(Paths.get(destDir));
 		}
 
+		String newFileName = dtf.format(LocalDateTime.now()).hashCode() + "." + fileType;
 		BufferedInputStream bis = new BufferedInputStream(is);
-		BufferedOutputStream bos = new BufferedOutputStream(
-				new FileOutputStream(new File(destDir + dtf.format(LocalDateTime.now()).hashCode() + ".csv")));
+		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destDir + newFileName)));
 		int len = -1;
 		while ((len = bis.read()) != -1) {
 			bos.write(len);
@@ -284,7 +315,7 @@ public class MailServiceImpl implements MailService {
 		bos.close();
 		bis.close();
 
-		return dtf.format(LocalDateTime.now()).hashCode() + ".csv";
+		return newFileName;
 	}
 
 	public String decodeText(String encodeText) throws UnsupportedEncodingException {

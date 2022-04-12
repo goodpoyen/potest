@@ -46,7 +46,8 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 			student.setIdCard(SingUpdata[2]);
 			student.setSchoolName(SingUpdata[3]);
 			student.setGrade(SingUpdata[4]);
-			student.setBirthday(SingUpdata[5]);
+//			student.setBirthday(SingUpdata[5]);
+			student.setBirthday("2020/02/05");
 			student.setEmail(SingUpdata[6]);
 			student.setGender(SingUpdata[7]);
 			student.setCreater(MailServiceImpl.getFrom(msg));
@@ -54,7 +55,8 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 			if (checkSignUpData(student)) {
 				student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
-				student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
+//				student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
+				student.setBirthday(AES256ServiceImpl.encode("2020/02/05"));
 				student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
 				signUpStudentsRepository.save(student);
 			} else {

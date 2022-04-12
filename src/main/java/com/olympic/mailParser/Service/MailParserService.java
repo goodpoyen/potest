@@ -7,6 +7,9 @@ import java.util.HashMap;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import com.opencsv.exceptions.CsvException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
@@ -35,4 +38,8 @@ public interface MailParserService {
 	void saveSingUpData(String[] SingUpdata, MimeMessage msg);
 
 	String switchOlympic(String[] SingUpdata, MimeMessage msg);
+
+	JSONObject getFileType(MimeMessage msg) throws JSONException, IOException, MessagingException;
+
+	void createCSVFile(String newFile, String text) throws IOException;
 }
