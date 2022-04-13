@@ -13,13 +13,18 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
 import com.olympic.mailParser.Service.TikaReadFileService;
+import com.olympic.mailParser.utils.FilterString;
 
 @Service
 public class TikaReadFileServiceImpl implements TikaReadFileService {
+	@Autowired
+	private FilterString FilterString;
+	
 	public JSONObject readExcelToCSV(String file, String destDir, String pwd) throws IOException {
 		JSONObject result = new JSONObject();
 
@@ -48,6 +53,9 @@ public class TikaReadFileServiceImpl implements TikaReadFileService {
 			newFile = file.replace("xlsx", "csv");
 
 			String text = setCSVString(handler.toString());
+			
+			text = FilterString.cleanXSS(text);
+			text = FilterString.cleanSqlInjection(text);
 
 			result.put("status", true);
 			result.put("msg", "success");

@@ -9,11 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.olympic.mailParser.Service.OpenOfficeService;
+import com.olympic.mailParser.utils.FilterString;
 
 @Service
 public class OpenOfficeServiceImpl implements OpenOfficeService {
 	@Autowired
 	private ZipFileServiceImpl ZipFileServiceImpl;
+	
+	@Autowired
+	private FilterString FilterString;
 
 	public JSONObject readODSToCSV(String fileName, String destDir, String pwd) throws IOException {
 		JSONObject result = new JSONObject();
@@ -53,6 +57,9 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 						}
 					}
 				}
+				
+				text = FilterString.cleanXSS(text);
+				text = FilterString.cleanSqlInjection(text);
 				
 				result.put("status", true);
 				result.put("msg", "success");
