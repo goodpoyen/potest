@@ -28,7 +28,6 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 	public String save(String[] SingUpdata, String olyId, MimeMessage msg) {
 		errorMessage = "";
-
 		try {
 			errorMessage = "";
 
@@ -46,8 +45,7 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 			student.setIdCard(SingUpdata[2]);
 			student.setSchoolName(SingUpdata[3].trim());
 			student.setGrade(SingUpdata[4].trim());
-//			student.setBirthday(SingUpdata[5].trim());
-			student.setBirthday("2020/02/05");
+			student.setBirthday(SingUpdata[5].trim());
 			student.setEmail(SingUpdata[6].trim());
 			student.setGender(SingUpdata[7].trim());
 			student.setCreater(MailServiceImpl.getFrom(msg));
@@ -55,14 +53,13 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 			if (checkSignUpData(student)) {
 				student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2].trim()));
-//				student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5].trim()));
-				student.setBirthday(AES256ServiceImpl.encode("2020/02/05"));
+				student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5].trim()));
 				student.setEmail(AES256ServiceImpl.encode(SingUpdata[6].trim()));
 				signUpStudentsRepository.save(student);
 			} else {
 				errorMessage += "\r\n";
 			}
-
+			System.out.println(errorMessage);
 			return errorMessage;
 		} catch (Exception e) {
 			return "檔案有問題";

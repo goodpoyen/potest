@@ -6,7 +6,7 @@ import java.io.IOException;
 import org.json.JSONObject;
 
 public interface TikaReadFileService {
-	JSONObject readExcelToCSV(String file, String destDir, String pwd) throws IOException;
+	JSONObject readExcelToCSV(String file, String fileType, String destDir, String pwd) throws IOException;
 	
 	String setCSVString(String fileContent);
 	

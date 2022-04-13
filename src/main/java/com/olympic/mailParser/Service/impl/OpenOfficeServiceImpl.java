@@ -2,6 +2,8 @@ package com.olympic.mailParser.Service.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jopendocument.dom.spreadsheet.SpreadSheet;
 import org.json.JSONObject;
@@ -15,14 +17,14 @@ import com.olympic.mailParser.utils.FilterString;
 public class OpenOfficeServiceImpl implements OpenOfficeService {
 	@Autowired
 	private ZipFileServiceImpl ZipFileServiceImpl;
-	
+
 	@Autowired
 	private FilterString FilterString;
 
-	public JSONObject readODSToCSV(String fileName, String destDir, String pwd) throws IOException {
+	public JSONObject readODSToCSV(String file, String destDir, String pwd) throws IOException {
 		JSONObject result = new JSONObject();
 
-		JSONObject unzipResult = ZipFileServiceImpl.unZipFile(fileName, destDir, pwd);
+		JSONObject unzipResult = ZipFileServiceImpl.unZipFile(file, destDir, pwd);
 
 		if (unzipResult.getBoolean("status")) {
 
@@ -36,17 +38,19 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 				result.put("file", "");
 				result.put("text", "");
 
+				deleteFile(new File(destDir + newFile));
+
 				return result;
 			}
-			
+
 			try {
 				SpreadSheet spreadsheet = SpreadSheet.createFromFile(new File(destDir + newFile));
-	
+
 				int nColCount = spreadsheet.getSheet(0).getColumnCount();
 				int nRowCount = spreadsheet.getSheet(0).getRowCount();
-	
+
 				String text = "";
-	
+
 				for (int nRowIndex = 0; nRowIndex < nRowCount; nRowIndex++) {
 					for (int nColIndex = 0; nColIndex < nColCount; nColIndex++) {
 						String value = spreadsheet.getSheet(0).getCellAt(nColIndex, nRowIndex).getTextValue();
@@ -57,21 +61,25 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 						}
 					}
 				}
+
+				String CSVFile = newFile.replace("ods", "csv");
 				
 				text = FilterString.cleanXSS(text);
 				text = FilterString.cleanSqlInjection(text);
-				
+
 				result.put("status", true);
 				result.put("msg", "success");
-				result.put("file", newFile);
+				result.put("file", CSVFile);
 				result.put("text", text);
-				
+
 			} catch (IOException e) {
 				result.put("status", false);
 				result.put("msg", e.getMessage());
 				result.put("file", "");
 				result.put("text", "");
 			}
+
+			deleteFile(new File(destDir + newFile));
 		} else {
 			result.put("status", false);
 			result.put("msg", unzipResult.get("msg"));
@@ -80,5 +88,76 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 		}
 
 		return result;
+	}
+
+	public JSONObject readODS(String file, String destDir, String pwd) throws IOException {
+		JSONObject result = new JSONObject();
+
+		JSONObject unzipResult = ZipFileServiceImpl.unZipFile(file, destDir, pwd);
+
+		List<List> dataList = new ArrayList();
+
+		if (unzipResult.getBoolean("status")) {
+
+			int listSize = unzipResult.getJSONArray("resultData").length();
+
+			String newFile = unzipResult.getJSONArray("resultData").get(listSize - 1).toString();
+
+			if (!newFile.contains("ods")) {
+				result.put("status", false);
+				result.put("msg", "not ods file");
+				result.put("file", "");
+				result.put("text", "");
+
+				deleteFile(new File(destDir + newFile));
+
+				return result;
+			}
+
+			try {
+				SpreadSheet spreadsheet = SpreadSheet.createFromFile(new File(destDir + newFile));
+
+				int nColCount = spreadsheet.getSheet(0).getColumnCount();
+				int nRowCount = spreadsheet.getSheet(0).getRowCount();
+
+				for (int nRowIndex = 0; nRowIndex < nRowCount; nRowIndex++) {
+					List data = new ArrayList();
+					for (int nColIndex = 0; nColIndex < nColCount; nColIndex++) {
+						String value = spreadsheet.getSheet(0).getCellAt(nColIndex, nRowIndex).getTextValue();
+						value = FilterString.cleanXSS(value);
+						value = FilterString.cleanSqlInjection(value);
+
+						data.add(value);
+					}
+					dataList.add(data);
+				}
+
+				result.put("status", true);
+				result.put("msg", "success");
+				result.put("text", dataList);
+
+			} catch (IOException e) {
+				result.put("status", false);
+				result.put("msg", e.getMessage());
+				result.put("text", "");
+			}
+
+			deleteFile(new File(destDir + newFile));
+		} else {
+			result.put("status", false);
+			result.put("msg", unzipResult.get("msg"));
+			result.put("text", "");
+		}
+
+		return result;
+	}
+
+	public void deleteFile(File file) {
+		if (file.exists()) {
+			System.gc();
+			file.delete();
+		} else {
+			System.out.println("該file路徑不存在！！");
+		}
 	}
 }

@@ -4,6 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
+import org.apache.poi.poifs.crypt.Decryptor;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -24,8 +29,8 @@ import com.olympic.mailParser.utils.FilterString;
 public class TikaReadFileServiceImpl implements TikaReadFileService {
 	@Autowired
 	private FilterString FilterString;
-	
-	public JSONObject readExcelToCSV(String file, String destDir, String pwd) throws IOException {
+
+	public JSONObject readExcelToCSV(String file, String fileType, String destDir, String pwd) throws IOException {
 		JSONObject result = new JSONObject();
 
 		Parser parser = new AutoDetectParser();
@@ -49,11 +54,14 @@ public class TikaReadFileServiceImpl implements TikaReadFileService {
 
 			String newFile = "";
 
-			newFile = file.replace("xls", "csv");
-			newFile = file.replace("xlsx", "csv");
+			if (fileType.equals("xls")) {
+				newFile = file.replace("xls", "csv");
+			} else if (fileType.equals("xlsx")) {
+				newFile = file.replace("xlsx", "csv");
+			}
 
 			String text = setCSVString(handler.toString());
-			
+
 			text = FilterString.cleanXSS(text);
 			text = FilterString.cleanSqlInjection(text);
 

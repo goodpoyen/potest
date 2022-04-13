@@ -55,10 +55,10 @@ public class MailParserServiceImpl implements MailParserService {
 	private OlympicScheduleRepository OlympicScheduleRepository;
 
 	@Autowired
-	private TikaReadFileServiceImpl TikaReadFileServiceImpl;
+	private OpenOfficeServiceImpl OpenOfficeServiceImpl;
 
 	@Autowired
-	private OpenOfficeServiceImpl OpenOfficeServiceImpl;
+	private MSOfficeServiceImpl MSOfficeServiceImpl;
 
 	private String errorMessage;
 
@@ -137,13 +137,12 @@ public class MailParserServiceImpl implements MailParserService {
 						String newFile = MailServiceImpl.saveAttachment(msg, mailFilePath, fileType);
 
 						JSONObject content = new JSONObject();
-
 						if (fileType.equals("xlsx") || fileType.equals("xls")) {
-							content = TikaReadFileServiceImpl.readExcelToCSV(newFile, mailFilePath, "12345");
+							content = MSOfficeServiceImpl.readExcelToCSV(newFile, fileType, mailFilePath, "123456");
 						} else if (fileType.equals("zip")) {
 							content = OpenOfficeServiceImpl.readODSToCSV(newFile, mailFilePath, "123456");
 						}
-
+						System.out.println(content.toString());
 						if (content.getBoolean("status")) {
 							createCSVFile(content.getString("file"), content.getString("text"));
 
