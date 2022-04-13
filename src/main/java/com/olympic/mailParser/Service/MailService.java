@@ -55,4 +55,6 @@ public interface MailService {
 	void sendEmail(HashMap<String, String> smtp, HashMap<String, String> mail);
 
 	Boolean checkFileType(Part part, String type) throws IOException, MessagingException;
+	
+	void mailMessages(MimeMessage msg) throws MessagingException, IOException;
 }

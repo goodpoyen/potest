@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -168,14 +169,16 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 					cellValue = FilterString.cleanXSS(cellValue);
 					cellValue = FilterString.cleanSqlInjection(cellValue);
 
-					data.add(cellValue);
+					data.add(cellValue.trim());
 				}
 				dataList.add(data);
 			}
+			
+			JSONArray text = new JSONArray(dataList);
 
 			result.put("status", true);
 			result.put("msg", "success");
-			result.put("text", dataList);
+			result.put("text", text);
 
 			wb.close();
 		} catch (Exception e) {

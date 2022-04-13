@@ -1,13 +1,6 @@
 package com.olympic.mailParser.Service.impl;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +12,7 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +22,7 @@ import org.springframework.stereotype.Service;
 import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
 import com.olympic.mailParser.Service.MailParserService;
 import com.olympic.mailParser.utils.Verify;
-import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import com.opencsv.exceptions.CsvValidationException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
 import com.sun.mail.pop3.POP3Folder;
@@ -122,7 +114,7 @@ public class MailParserServiceImpl implements MailParserService {
 //            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞初選") ) {
 //            if (!"".equals(olyId) && olyId != null && !MailServiceImpl.isSeen(msg)) {
 			if (!"".equals(olyId) && olyId != null) {
-				mailMessages(msg);
+				MailServiceImpl.mailMessages(msg);
 
 				boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
 
@@ -138,16 +130,31 @@ public class MailParserServiceImpl implements MailParserService {
 
 						JSONObject content = new JSONObject();
 						if (fileType.equals("xlsx") || fileType.equals("xls")) {
-							content = MSOfficeServiceImpl.readExcelToCSV(newFile, fileType, mailFilePath, "123456");
+							content = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, "123456");
 						} else if (fileType.equals("zip")) {
-							content = OpenOfficeServiceImpl.readODSToCSV(newFile, mailFilePath, "123456");
+							content = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, "123456");
 						}
-						System.out.println(content.toString());
+//						System.out.println(content.toString());
 						if (content.getBoolean("status")) {
-							createCSVFile(content.getString("file"), content.getString("text"));
-
-							fileReader(content.getString("file"), msg);
-							deleteFile(new File(mailFilePath + content.getString("file")));
+							JSONArray array = content.getJSONArray("text");
+							
+							for (int index = 0; index < array.length(); index++) {
+								if (index == 0) {
+									continue;
+								}
+								
+								JSONArray item = array.getJSONArray(index);
+								
+								String[] rowData = new String[item.length()];
+								
+								for (int subIndex = 0; subIndex < item.length(); subIndex++) {
+									item.get(subIndex);
+									
+									rowData[subIndex] = item.get(subIndex).toString();
+								}
+								
+								saveSingUpData(rowData, msg);
+							}
 //
 //							if (errorMessage == null || "".equals(errorMessage)) {
 //								mail.put("receive", MailServiceImpl.getFrom(msg));
@@ -196,15 +203,6 @@ public class MailParserServiceImpl implements MailParserService {
 		stroe.close();
 	}
 
-	public void createCSVFile(String newFile, String text) throws IOException {
-		BufferedWriter out = new BufferedWriter(
-				new OutputStreamWriter(new FileOutputStream(new File(mailFilePath + newFile)), "UTF-8"));
-		out.write('\ufeff');
-		out.write(text);
-		out.flush();
-		out.close();
-	}
-
 	public JSONObject getFileType(MimeMessage msg) throws JSONException, IOException, MessagingException {
 		JSONObject result = new JSONObject();
 
@@ -223,26 +221,6 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 
 		return result;
-	}
-
-	public void mailMessages(MimeMessage msg) throws MessagingException, IOException {
-		System.out.println("------------------解析第" + msg.getMessageNumber() + "封信件-------------------- ");
-		System.out.println("主旨: " + MailServiceImpl.getSubject(msg));
-		System.out.println("發件人: " + MailServiceImpl.getFrom(msg));
-		System.out.println("收件人：" + MailServiceImpl.getReceiveAddress(msg, null));
-		System.out.println("發送時間：" + MailServiceImpl.getSentDate(msg, null));
-		System.out.println("是否已讀：" + MailServiceImpl.isSeen(msg));
-		System.out.println("信件優先等級." + "：" + MailServiceImpl.getPriority(msg));
-		System.out.println("信件大小：" + msg.getSize() * 1024 + "kb");
-
-		boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
-		System.out.println("是否包含附件：" + isContainerAttachment);
-
-//        StringBuffer content = new StringBuffer(30);
-//        MailServiceImpl.getMailTextContent(msg, content);
-//        System.out.println("信件正文：" + (content.length() > 100 ? content.substring(0, 100) + "..." : content));
-		System.out.println("------------------第" + msg.getMessageNumber() + "封信件解析結束-------------------- ");
-		System.out.println();
 	}
 
 	public String getOlympicSchedule(String subject) {
@@ -269,44 +247,6 @@ public class MailParserServiceImpl implements MailParserService {
 			return olyId;
 		} else {
 			return "";
-		}
-	}
-
-	public void fileReader(String fileName, MimeMessage msg) {
-		String filePath = mailFilePath + fileName;
-
-		FileInputStream fileInputStream;
-		try {
-			fileInputStream = new FileInputStream(filePath);
-			Reader reader = new InputStreamReader(fileInputStream, "utf-8");
-
-			CSVReader csvReader = new CSVReader(reader);
-
-			String[] nextRecord;
-			int line = 0;
-			while ((nextRecord = csvReader.readNext()) != null) {
-
-				if (line != 0) {
-					saveSingUpData(nextRecord, msg);
-					if (errorMessage == "檔案有問題") {
-						break;
-					}
-				}
-
-				line++;
-			}
-		} catch (CsvValidationException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	public void deleteFile(File file) {
-		if (file.exists()) {
-			System.gc();
-			file.delete();
-		} else {
-			System.out.println("該file路徑不存在！！");
 		}
 	}
 

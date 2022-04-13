@@ -1,6 +1,5 @@
 package com.olympic.mailParser.Service;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -31,15 +30,9 @@ public interface MailParserService {
 
 	void parseMessageIMAP(IMAPStore stroe, IMAPFolder folder) throws MessagingException, IOException, CsvException;
 
-	void fileReader(String fileName, MimeMessage msg);
-
-	void deleteFile(File file);
-
 	void saveSingUpData(String[] SingUpdata, MimeMessage msg);
 
 	String switchOlympic(String[] SingUpdata, MimeMessage msg);
 
 	JSONObject getFileType(MimeMessage msg) throws JSONException, IOException, MessagingException;
-
-	void createCSVFile(String newFile, String text) throws IOException;
 }

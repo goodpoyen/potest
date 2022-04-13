@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jopendocument.dom.spreadsheet.SpreadSheet;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -127,14 +128,16 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 						value = FilterString.cleanXSS(value);
 						value = FilterString.cleanSqlInjection(value);
 
-						data.add(value);
+						data.add(value.trim());
 					}
 					dataList.add(data);
 				}
+				
+				JSONArray text = new JSONArray(dataList);
 
 				result.put("status", true);
 				result.put("msg", "success");
-				result.put("text", dataList);
+				result.put("text", text);
 
 			} catch (IOException e) {
 				result.put("status", false);

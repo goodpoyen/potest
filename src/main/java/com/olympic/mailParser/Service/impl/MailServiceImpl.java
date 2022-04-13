@@ -106,6 +106,26 @@ public class MailServiceImpl implements MailService {
 
 		return folder;
 	}
+	
+	public void mailMessages(MimeMessage msg) throws MessagingException, IOException {
+		System.out.println("------------------解析第" + msg.getMessageNumber() + "封信件-------------------- ");
+		System.out.println("主旨: " + getSubject(msg));
+		System.out.println("發件人: " + getFrom(msg));
+		System.out.println("收件人：" + getReceiveAddress(msg, null));
+		System.out.println("發送時間：" + getSentDate(msg, null));
+		System.out.println("是否已讀：" + isSeen(msg));
+		System.out.println("信件優先等級." + "：" + getPriority(msg));
+		System.out.println("信件大小：" + msg.getSize() * 1024 + "kb");
+
+		boolean isContainerAttachment = isContainAttachment(msg);
+		System.out.println("是否包含附件：" + isContainerAttachment);
+
+//        StringBuffer content = new StringBuffer(30);
+//        MailServiceImpl.getMailTextContent(msg, content);
+//        System.out.println("信件正文：" + (content.length() > 100 ? content.substring(0, 100) + "..." : content));
+		System.out.println("------------------第" + msg.getMessageNumber() + "封信件解析結束-------------------- ");
+		System.out.println();
+	}
 
 	public String getSubject(MimeMessage msg) throws UnsupportedEncodingException, MessagingException {
 		return MimeUtility.decodeText(msg.getSubject());

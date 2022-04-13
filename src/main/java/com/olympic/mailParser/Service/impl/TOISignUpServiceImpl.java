@@ -33,28 +33,28 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 			AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
 
-			SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1].trim(),
-					AES256ServiceImpl.encode(SingUpdata[2].trim()));
+			SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1],
+					AES256ServiceImpl.encode(SingUpdata[2]));
 
 			if (student == null) {
 				student = new SignUpStudents();
 			}
 
-			student.setOlympic(SingUpdata[0].trim());
-			student.setName(SingUpdata[1].trim());
+			student.setOlympic(SingUpdata[0].toUpperCase());
+			student.setName(SingUpdata[1]);
 			student.setIdCard(SingUpdata[2]);
-			student.setSchoolName(SingUpdata[3].trim());
-			student.setGrade(SingUpdata[4].trim());
-			student.setBirthday(SingUpdata[5].trim());
-			student.setEmail(SingUpdata[6].trim());
-			student.setGender(SingUpdata[7].trim());
+			student.setSchoolName(SingUpdata[3]);
+			student.setGrade(SingUpdata[4]);
+			student.setBirthday(SingUpdata[5]);
+			student.setEmail(SingUpdata[6]);
+			student.setGender(SingUpdata[7]);
 			student.setCreater(MailServiceImpl.getFrom(msg));
 			student.setOlyId(olyId);
 
 			if (checkSignUpData(student)) {
-				student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2].trim()));
-				student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5].trim()));
-				student.setEmail(AES256ServiceImpl.encode(SingUpdata[6].trim()));
+				student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
+				student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
+				student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
 				signUpStudentsRepository.save(student);
 			} else {
 				errorMessage += "\r\n";
