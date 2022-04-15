@@ -8,7 +8,7 @@ public interface MSOfficeService {
 
 	JSONObject readExcelToCSV(String file, String fileType, String destDir, String pwd);
 	
-	JSONObject readExcel(String file, String fileType, String destDir, String pwd);
+	JSONObject readExcel(String file, String fileType, String destDir, String pwd, int headerCount);
 	
 	void deleteFile(File file);
 }

@@ -1,11 +1,11 @@
 package com.olympic.mailParser.Service;
 
-import javax.mail.internet.MimeMessage;
-
 import com.olympic.mailParser.DAO.Entity.SignUpStudents;
 
 public interface TOISignUpService {
-	String save(String[] SingUpdata, String olyId, MimeMessage msg);
+	String save(String[] SingUpdata, String olyId, String createrEmail, int index);
 
-	Boolean checkSignUpData(SignUpStudents student);
+	Boolean checkSignUpData(SignUpStudents student, int index);
+	
+	Boolean checkSignUpDataIsNull(SignUpStudents student, int index);
 }

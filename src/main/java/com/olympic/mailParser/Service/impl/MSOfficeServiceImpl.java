@@ -116,7 +116,7 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 		return result;
 	}
 
-	public JSONObject readExcel(String file, String fileType, String destDir, String pwd) {
+	public JSONObject readExcel(String file, String fileType, String destDir, String pwd, int headerCount) {
 		JSONObject result = new JSONObject();
 		try {
 			Workbook wb = null;
@@ -143,12 +143,16 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 
 			for (int r = 0; r < rowCount; r++) {
 				Row row = sheet.getRow(r);
-				int cellCount = row.getPhysicalNumberOfCells();
 				List data = new ArrayList();
 
-				for (int c = 0; c < cellCount; c++) {
-					Cell cell = row.getCell(c);
-					String cellType = cell.getCellType().toString();
+				for (int columnIndex = 0; columnIndex < headerCount; columnIndex ++) {
+					String cellType = "";
+					Cell cell = row.getCell(columnIndex);
+					if (cell != null) {
+						cellType = cell.getCellType().toString();
+					} else {
+						cellType = "NULL";
+					}
 					String cellValue = null;
 					switch (cellType) {
 					case "STRING":
@@ -162,6 +166,9 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 							cellValue = String.valueOf(num);
 						}
 						break;
+					case "NULL":
+						cellValue = "";
+						break;
 					default:
 						cellValue = "";
 					}
@@ -171,9 +178,22 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 
 					data.add(cellValue.trim());
 				}
+				
+				int count = 0;
+				
+				for (int i = 0; i < data.size(); i ++) {
+					if ("".equals(data.get(i))) {
+						count++;
+					}
+				}
+				
+				if (count == headerCount) {
+					continue;
+				}
+				
 				dataList.add(data);
 			}
-			
+
 			JSONArray text = new JSONArray(dataList);
 
 			result.put("status", true);

@@ -1,5 +1,10 @@
 package com.olympic.mailParser.controller;
 
+import java.io.UnsupportedEncodingException;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
 import com.olympic.mailParser.Service.impl.CSVFileServiceImpl;
+import com.olympic.mailParser.Service.impl.MSOfficeServiceImpl;
 import com.olympic.mailParser.Service.impl.MailParserServiceImpl;
+import com.olympic.mailParser.Service.impl.TOISignUpServiceImpl;
 import com.olympic.mailParser.Service.impl.ZipFileServiceImpl;
 import com.olympic.mailParser.utils.Verify;
 import com.sun.mail.imap.IMAPFolder;
@@ -31,9 +38,17 @@ public class TestController {
 	
 	@Autowired
 	private CSVFileServiceImpl CSVFileServiceImpl;
-
+	
+	@Autowired
+	private MSOfficeServiceImpl MSOfficeServiceImpl;
+	
+	@Autowired
+	private TOISignUpServiceImpl TOISignUpServiceImpl;
+	
 	@Value("${mailFilePath}")
 	private String mailFilePath;
+	
+	private String olyId = "3";
 
 	@GetMapping("/test")
 	public String home() throws Exception {
@@ -65,7 +80,7 @@ public class TestController {
 //        String content = handler.toString(); 
 //        System.out.println("Contents of the document:" + content);
 
-		JSONObject result = CSVFileServiceImpl.readerCSV("資訊奧林匹亞4.csv", mailFilePath);
+		JSONObject result = MSOfficeServiceImpl.readExcel("test15.xlsx", "xlsx", mailFilePath, "123456", 8);
 		
 		System.out.println(result);
 

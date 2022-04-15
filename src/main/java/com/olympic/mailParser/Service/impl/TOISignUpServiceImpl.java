@@ -1,7 +1,5 @@
 package com.olympic.mailParser.Service.impl;
 
-import javax.mail.internet.MimeMessage;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,15 +16,12 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 	@Autowired
 	private AES256ServiceImpl AES256ServiceImpl;
 
-	@Autowired
-	private MailServiceImpl MailServiceImpl;
-
 	private String errorMessage;
 
 	@Autowired
 	private SignUpStudentsRepository signUpStudentsRepository;
 
-	public String save(String[] SingUpdata, String olyId, MimeMessage msg) {
+	public String save(String[] SingUpdata, String olyId, String createrEmail, int index) {
 		errorMessage = "";
 		try {
 			errorMessage = "";
@@ -48,18 +43,22 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 			student.setBirthday(SingUpdata[5]);
 			student.setEmail(SingUpdata[6]);
 			student.setGender(SingUpdata[7]);
-			student.setCreater(MailServiceImpl.getFrom(msg));
+			student.setCreater(createrEmail);
 			student.setOlyId(olyId);
 
-			if (checkSignUpData(student)) {
-				student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
-				student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
-				student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
-				signUpStudentsRepository.save(student);
+			if (checkSignUpDataIsNull(student, index)) {
+				if (checkSignUpData(student, index)) {
+					student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
+					student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
+					student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
+					signUpStudentsRepository.save(student);
+				} else {
+					errorMessage += "\r\n";
+				}
 			} else {
 				errorMessage += "\r\n";
 			}
-			System.out.println(errorMessage);
+
 			return errorMessage;
 		} catch (Exception e) {
 			return "檔案有問題";
@@ -67,7 +66,7 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 	}
 
-	public Boolean checkSignUpData(SignUpStudents student) {
+	public Boolean checkSignUpData(SignUpStudents student, int index) {
 		Boolean status = true;
 		String error = "";
 
@@ -98,9 +97,66 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 		if (!status) {
 			if (errorMessage == null) {
-				errorMessage = student.getName() + "-" + error;
+				errorMessage = "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
 			} else {
-				errorMessage += student.getName() + "-" + error;
+				errorMessage += "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
+			}
+		}
+
+		return status;
+	}
+
+	public Boolean checkSignUpDataIsNull(SignUpStudents student, int index) {
+		Boolean status = true;
+		String error = "";
+
+		student.getOlympic();
+
+		if ("".equals(student.getOlympic())) {
+			status = false;
+			error += "類別不能為空;";
+		}
+
+		if ("".equals(student.getName())) {
+			status = false;
+			error += "姓名不能為空;";
+		}
+
+		if ("".equals(student.getIdCard())) {
+			status = false;
+			error += "身分證不能為空;";
+		}
+
+		if ("".equals(student.getSchoolName())) {
+			status = false;
+			error += "校名不能為空;";
+		}
+
+		if ("".equals(student.getGrade())) {
+			status = false;
+			error += "年級不能為空;";
+		}
+
+		if ("".equals(student.getBirthday())) {
+			status = false;
+			error += "生日不能為空;";
+		}
+
+		if ("".equals(student.getEmail())) {
+			status = false;
+			error += "信箱不能為空;";
+		}
+
+		if ("".equals(student.getGender())) {
+			status = false;
+			error += "性別不能為空;";
+		}
+
+		if (!status) {
+			if (errorMessage == null) {
+				errorMessage = "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
+			} else {
+				errorMessage += "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
 			}
 		}
 

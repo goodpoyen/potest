@@ -1,6 +1,7 @@
 package com.olympic.mailParser.Service;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 import javax.mail.MessagingException;
@@ -30,9 +31,7 @@ public interface MailParserService {
 
 	void parseMessageIMAP(IMAPStore stroe, IMAPFolder folder) throws MessagingException, IOException, CsvException;
 
-	void saveSingUpData(String[] SingUpdata, MimeMessage msg);
-
-	String switchOlympic(String[] SingUpdata, MimeMessage msg);
+	String switchOlympic(String[] SingUpdata, MimeMessage msg, int index) throws UnsupportedEncodingException, MessagingException;
 
 	JSONObject getFileType(MimeMessage msg) throws JSONException, IOException, MessagingException;
 }

@@ -130,32 +130,32 @@ public class MailParserServiceImpl implements MailParserService {
 
 						JSONObject content = new JSONObject();
 						if (fileType.equals("xlsx") || fileType.equals("xls")) {
-							content = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, "123456");
+							content = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, "123456", 8);
 						} else if (fileType.equals("zip")) {
 							content = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, "123456");
 						}
 //						System.out.println(content.toString());
 						if (content.getBoolean("status")) {
 							JSONArray array = content.getJSONArray("text");
-							
+
 							for (int index = 0; index < array.length(); index++) {
 								if (index == 0) {
 									continue;
 								}
-								
+
 								JSONArray item = array.getJSONArray(index);
-								
+
 								String[] rowData = new String[item.length()];
-								
+
 								for (int subIndex = 0; subIndex < item.length(); subIndex++) {
-									item.get(subIndex);
-									
 									rowData[subIndex] = item.get(subIndex).toString();
 								}
-								
-								saveSingUpData(rowData, msg);
+
+								errorMessage = switchOlympic(rowData, msg, index);
+
+								System.out.println(errorMessage);
 							}
-//
+
 //							if (errorMessage == null || "".equals(errorMessage)) {
 //								mail.put("receive", MailServiceImpl.getFrom(msg));
 //								mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名成功");
@@ -250,22 +250,8 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 	}
 
-	public void saveSingUpData(String[] SingUpdata, MimeMessage msg) {
-		for (String signUpValue : SingUpdata) {
-			if (signUpValue.isEmpty()) {
-				errorMessage += SingUpdata[1] + "-資料遺漏" + "\r\n";
-				return;
-			}
-		}
-
-		if (errorMessage == null || "".equals(errorMessage)) {
-			errorMessage = switchOlympic(SingUpdata, msg);
-		} else {
-			errorMessage += switchOlympic(SingUpdata, msg);
-		}
-	}
-
-	public String switchOlympic(String[] SingUpdata, MimeMessage msg) {
+	public String switchOlympic(String[] SingUpdata, MimeMessage msg, int index)
+			throws UnsupportedEncodingException, MessagingException {
 		String type = "";
 
 		try {
@@ -280,7 +266,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		switch (type) {
 		case "TOI":
-			return TOISignUpServiceImpl.save(SingUpdata, olyId, msg);
+			return TOISignUpServiceImpl.save(SingUpdata, olyId, MailServiceImpl.getFrom(msg), index);
 		default:
 			return "55";
 		}
