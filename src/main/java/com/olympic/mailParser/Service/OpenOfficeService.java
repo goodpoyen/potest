@@ -8,7 +8,7 @@ import org.json.JSONObject;
 public interface OpenOfficeService {
 	JSONObject readODSToCSV(String file, String destDir, String pwd) throws IOException;
 	
-	JSONObject readODS(String file, String destDir, String pwd) throws IOException;
+	JSONObject readODS(String file, String destDir, String pwd, int headerCount) throws IOException;
 	
 	void deleteFile(File file);
 }

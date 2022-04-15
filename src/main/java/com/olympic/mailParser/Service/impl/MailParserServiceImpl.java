@@ -132,7 +132,7 @@ public class MailParserServiceImpl implements MailParserService {
 						if (fileType.equals("xlsx") || fileType.equals("xls")) {
 							content = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, "123456", 8);
 						} else if (fileType.equals("zip")) {
-							content = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, "123456");
+							content = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, "123456", 8);
 						}
 //						System.out.println(content.toString());
 						if (content.getBoolean("status")) {
@@ -152,8 +152,6 @@ public class MailParserServiceImpl implements MailParserService {
 								}
 
 								errorMessage = switchOlympic(rowData, msg, index);
-
-								System.out.println(errorMessage);
 							}
 
 //							if (errorMessage == null || "".equals(errorMessage)) {

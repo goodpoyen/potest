@@ -91,7 +91,7 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 		return result;
 	}
 
-	public JSONObject readODS(String file, String destDir, String pwd) throws IOException {
+	public JSONObject readODS(String file, String destDir, String pwd, int headerCount) throws IOException {
 		JSONObject result = new JSONObject();
 
 		JSONObject unzipResult = ZipFileServiceImpl.unZipFile(file, destDir, pwd);
@@ -127,9 +127,21 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 						String value = spreadsheet.getSheet(0).getCellAt(nColIndex, nRowIndex).getTextValue();
 						value = FilterString.cleanXSS(value);
 						value = FilterString.cleanSqlInjection(value);
-
+						
 						data.add(value.trim());
 					}
+					int count = 0;
+					
+					for (int i = 0; i < data.size(); i ++) {
+						if ("".equals(data.get(i))) {
+							count++;
+						}
+					}
+					
+					if (count == headerCount) {
+						continue;
+					}
+					
 					dataList.add(data);
 				}
 				
