@@ -1,5 +1,10 @@
 package com.olympic.mailParser.Service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,145 +26,152 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 	@Autowired
 	private SignUpStudentsRepository signUpStudentsRepository;
 
-	public String save(String[] SingUpdata, String olyId, String createrEmail, int index) {
-		errorMessage = "";
-		try {
-			errorMessage = "";
+	private int BATCH_SIZE = 500;
 
-			AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
+	public String save(JSONArray SingUpdata, String olyId, String createrEmail, int headerCount,
+			JSONArray signupColumns) {
 
-			SignUpStudents student = signUpStudentsRepository.findByNameAndIdCard(SingUpdata[1],
-					AES256ServiceImpl.encode(SingUpdata[2]));
+		int count = 0;
+		String[] headerData = new String[headerCount];
+		List<SignUpStudents> students = new ArrayList<>();
+		AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
 
-			if (student == null) {
-				student = new SignUpStudents();
+		for (int index = 0; index < SingUpdata.length(); index++) {
+
+			JSONArray item = SingUpdata.getJSONArray(index);
+
+			if (index == 0) {
+				for (int subIndex = 0; subIndex < item.length(); subIndex++) {
+					headerData[subIndex] = item.get(subIndex).toString();
+				}
+				continue;
 			}
 
-			student.setOlympic(SingUpdata[0].toUpperCase());
-			student.setName(SingUpdata[1]);
-			student.setIdCard(SingUpdata[2]);
-			student.setSchoolName(SingUpdata[3]);
-			student.setGrade(SingUpdata[4]);
-			student.setBirthday(SingUpdata[5]);
-			student.setEmail(SingUpdata[6]);
-			student.setGender(SingUpdata[7]);
-			student.setCreater(createrEmail);
-			student.setOlyId(olyId);
+			JSONObject saveData = new JSONObject();
+			String studentName = "";
+			Boolean status = true;
+			String error = "";
 
-			if (checkSignUpDataIsNull(student, index)) {
-				if (checkSignUpData(student, index)) {
-					student.setIdCard(AES256ServiceImpl.encode(SingUpdata[2]));
-					student.setBirthday(AES256ServiceImpl.encode(SingUpdata[5]));
-					student.setEmail(AES256ServiceImpl.encode(SingUpdata[6]));
-					signUpStudentsRepository.save(student);
-				} else {
-					errorMessage += "\r\n";
+			for (int subIndex = 0; subIndex < item.length(); subIndex++) {
+				for (int data = 0; data < signupColumns.length(); data++) {
+					if (headerData[subIndex].equals(signupColumns.getJSONObject(data).getString("columnName"))) {
+						JSONObject checkResult = checkSignUpData(signupColumns.getJSONObject(data),
+								item.get(subIndex).toString());
+
+						if ("".equals(studentName)
+								&& signupColumns.getJSONObject(data).getString("columnKey").equals("chineseName")) {
+							studentName = item.get(subIndex).toString();
+						}
+
+						if (!checkResult.getBoolean("status") && status) {
+							status = false;
+						}
+
+						if (status) {
+							saveData.put(signupColumns.getJSONObject(data).getString("columnKey"),
+									item.get(subIndex).toString());
+						} else {
+							saveData = new JSONObject();
+						}
+
+						error += checkResult.getString("error");
+					}
 				}
-			} else {
+			}
+
+			if (!status) {
+				if (errorMessage == null) {
+					errorMessage = "第" + (index + 1) + "筆資料-" + studentName + "-" + error;
+				} else {
+					errorMessage += "第" + (index + 1) + "筆資料-" + studentName + "-" + error;
+				}
+
 				errorMessage += "\r\n";
 			}
-
-			return errorMessage;
-		} catch (Exception e) {
-			return "檔案有問題";
+			
+			try {
+				if (saveData.length() > 0) {
+					saveData = prepareSaveData(saveData, olyId, createrEmail);
+	
+					students.add(new SignUpStudents(saveData));
+	
+					if (index + 1 == SingUpdata.length()) {
+						signUpStudentsRepository.saveAll((Iterable<SignUpStudents>) students);
+					} else {
+						if (count <= BATCH_SIZE) {
+							count++;
+						} else {
+							signUpStudentsRepository.saveAll((Iterable<SignUpStudents>) students);
+							students = new ArrayList<>();
+							count = 0;
+						}
+					}
+				}
+			} catch (Exception e) {
+				return "檔案有問題";
+			}
 		}
-
+//		System.out.println(errorMessage);
+		return errorMessage;
 	}
 
-	public Boolean checkSignUpData(SignUpStudents student, int index) {
+	public JSONObject checkSignUpData(JSONObject student, String value) {
+		JSONObject result = new JSONObject();
 		Boolean status = true;
 		String error = "";
 
-		if (!Verify.checkIdCard(student.getIdCard())) {
+		if (!student.getBoolean("isNull") && "".equals(value)) {
 			status = false;
-			error += "身分證有誤;";
-		}
-
-		if (!Verify.checkValue(Integer.parseInt(student.getGrade()), 7, 12)) {
-			status = false;
-			error += "年級有誤;";
-		}
-
-		if (!Verify.checkDate(student.getBirthday())) {
-			status = false;
-			error += "出生日期有誤;";
-		}
-
-		if (!Verify.checkEmail(student.getEmail())) {
-			status = false;
-			error += "信箱有誤;";
-		}
-
-//    	if (!Verify.checkValue(Integer.parseInt(student.getGender()), 1, 2)) {
-//    		status = false;
-//    		errorMessage += "性別有誤;";
-//    	}
-
-		if (!status) {
-			if (errorMessage == null) {
-				errorMessage = "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
-			} else {
-				errorMessage += "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
+			error += student.get("columnName") + "不能為空;";
+		} else if (student.getString("columnKey").equals("idCard")) {
+			if (!Verify.checkIdCard(value)) {
+				status = false;
+				error += "身分證有誤;";
+			}
+		} else if (student.getString("columnKey").equals("grade")) {
+			if (!Verify.checkValue(Integer.parseInt(value), 7, 12)) {
+				status = false;
+				error += "年級有誤;";
+			}
+		} else if (student.getString("columnKey").equals("birthday")) {
+			if (!Verify.checkDate(value)) {
+				status = false;
+				error += "出生日期有誤;";
+			}
+		} else if (student.getString("columnKey").equals("email")) {
+			if (!Verify.checkEmail(value)) {
+				status = false;
+				error += "信箱有誤;";
 			}
 		}
 
-		return status;
+		if (!status) {
+			result.put("status", false);
+			result.put("error", error);
+		} else {
+			result.put("status", true);
+			result.put("error", "");
+		}
+
+		return result;
 	}
 
-	public Boolean checkSignUpDataIsNull(SignUpStudents student, int index) {
-		Boolean status = true;
-		String error = "";
+	public JSONObject prepareSaveData(JSONObject saveData, String olyId, String createrEmail) {
+		saveData.put("idCard", AES256ServiceImpl.encode(saveData.getString("idCard")));
+		saveData.put("birthday", AES256ServiceImpl.encode(saveData.getString("birthday")));
+		saveData.put("email", AES256ServiceImpl.encode(saveData.getString("email")));
 
-		student.getOlympic();
+		saveData.put("olympic", saveData.getString("olympic").toUpperCase());
+		saveData.put("createrEmail", createrEmail);
+		saveData.put("olyId", olyId);
 
-		if ("".equals(student.getOlympic())) {
-			status = false;
-			error += "類別不能為空;";
+		SignUpStudents student = signUpStudentsRepository.findByChineseNameAndIdCard(saveData.getString("chineseName"),
+				saveData.getString("idCard"));
+		
+		if (student != null) {
+			saveData.put("stId", student.getStId());
 		}
 
-		if ("".equals(student.getName())) {
-			status = false;
-			error += "姓名不能為空;";
-		}
-
-		if ("".equals(student.getIdCard())) {
-			status = false;
-			error += "身分證不能為空;";
-		}
-
-		if ("".equals(student.getSchoolName())) {
-			status = false;
-			error += "校名不能為空;";
-		}
-
-		if ("".equals(student.getGrade())) {
-			status = false;
-			error += "年級不能為空;";
-		}
-
-		if ("".equals(student.getBirthday())) {
-			status = false;
-			error += "生日不能為空;";
-		}
-
-		if ("".equals(student.getEmail())) {
-			status = false;
-			error += "信箱不能為空;";
-		}
-
-		if ("".equals(student.getGender())) {
-			status = false;
-			error += "性別不能為空;";
-		}
-
-		if (!status) {
-			if (errorMessage == null) {
-				errorMessage = "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
-			} else {
-				errorMessage += "第" + (index + 1) + "筆資料-" + student.getName() + "-" + error;
-			}
-		}
-
-		return status;
+		return saveData;
 	}
 }

@@ -1,11 +1,12 @@
 package com.olympic.mailParser.Service;
 
-import com.olympic.mailParser.DAO.Entity.SignUpStudents;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public interface TOISignUpService {
-	String save(String[] SingUpdata, String olyId, String createrEmail, int index);
-
-	Boolean checkSignUpData(SignUpStudents student, int index);
+	String save(JSONArray SingUpdata, String olyId, String createrEmail, int headerCount,JSONArray signupColumns);
 	
-	Boolean checkSignUpDataIsNull(SignUpStudents student, int index);
+	JSONObject checkSignUpData(JSONObject student, String value);
+	
+	JSONObject prepareSaveData(JSONObject saveData, String olyId, String createrEmail);
 }

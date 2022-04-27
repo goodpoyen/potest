@@ -7,6 +7,7 @@ import java.util.HashMap;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,7 +32,7 @@ public interface MailParserService {
 
 	void parseMessageIMAP(IMAPStore stroe, IMAPFolder folder) throws MessagingException, IOException, CsvException;
 
-	String switchOlympic(String[] SingUpdata, MimeMessage msg, int index) throws UnsupportedEncodingException, MessagingException;
+	String switchOlympic(JSONArray SingUpdata, MimeMessage msg, int headerCount, JSONArray signupColumns) throws UnsupportedEncodingException, MessagingException;
 
 	JSONObject getFileType(MimeMessage msg) throws JSONException, IOException, MessagingException;
 }

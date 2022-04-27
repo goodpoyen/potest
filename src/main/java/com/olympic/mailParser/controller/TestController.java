@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,19 +36,19 @@ public class TestController {
 
 	@Autowired
 	private Verify Verify;
-	
+
 	@Autowired
 	private CSVFileServiceImpl CSVFileServiceImpl;
-	
+
 	@Autowired
 	private MSOfficeServiceImpl MSOfficeServiceImpl;
-	
+
 	@Autowired
 	private TOISignUpServiceImpl TOISignUpServiceImpl;
-	
+
 	@Value("${mailFilePath}")
 	private String mailFilePath;
-	
+
 	private String olyId = "3";
 
 	@GetMapping("/test")
@@ -79,10 +80,6 @@ public class TestController {
 // 
 //        String content = handler.toString(); 
 //        System.out.println("Contents of the document:" + content);
-
-		JSONObject result = MSOfficeServiceImpl.readExcel("test15.xlsx", "xlsx", mailFilePath, "123456", 8);
-		
-		System.out.println(result);
 
 		return "db test";
 	}

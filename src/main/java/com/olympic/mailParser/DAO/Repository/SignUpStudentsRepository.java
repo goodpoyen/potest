@@ -6,5 +6,5 @@ import com.olympic.mailParser.DAO.Entity.SignUpStudents;
 
 public interface SignUpStudentsRepository extends JpaRepository<SignUpStudents, Long> {
 
-	SignUpStudents findByNameAndIdCard(String name, String idCard);
+	SignUpStudents findByChineseNameAndIdCard(String chineseName, String idCard);
 }

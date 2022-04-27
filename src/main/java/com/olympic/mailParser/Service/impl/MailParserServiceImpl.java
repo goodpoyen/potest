@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +112,15 @@ public class MailParserServiceImpl implements MailParserService {
 			MimeMessage msg = (MimeMessage) messages[i];
 
 			olyId = getOlympicSchedule(MailServiceImpl.getSubject(msg));
+			JSONArray signupColumns = getTestObject();
+			int headerCount = 0;
+
+			for (int data = 0; data < signupColumns.length(); data++) {
+				if (signupColumns.getJSONObject(data).getBoolean("required")) {
+					headerCount++;
+				}
+			}
+
 //            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞初選") ) {
 //            if (!"".equals(olyId) && olyId != null && !MailServiceImpl.isSeen(msg)) {
 			if (!"".equals(olyId) && olyId != null) {
@@ -130,29 +140,14 @@ public class MailParserServiceImpl implements MailParserService {
 
 						JSONObject content = new JSONObject();
 						if (fileType.equals("xlsx") || fileType.equals("xls")) {
-							content = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, "123456", 8);
+							content = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, "123456",
+									headerCount);
 						} else if (fileType.equals("zip")) {
-							content = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, "123456", 8);
+							content = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, "123456", headerCount);
 						}
-//						System.out.println(content.toString());
+						System.out.println(content.toString());
 						if (content.getBoolean("status")) {
-							JSONArray array = content.getJSONArray("text");
-
-							for (int index = 0; index < array.length(); index++) {
-								if (index == 0) {
-									continue;
-								}
-
-								JSONArray item = array.getJSONArray(index);
-
-								String[] rowData = new String[item.length()];
-
-								for (int subIndex = 0; subIndex < item.length(); subIndex++) {
-									rowData[subIndex] = item.get(subIndex).toString();
-								}
-
-								errorMessage = switchOlympic(rowData, msg, index);
-							}
+							errorMessage = switchOlympic(content.getJSONArray("text"), msg, headerCount, signupColumns);
 
 //							if (errorMessage == null || "".equals(errorMessage)) {
 //								mail.put("receive", MailServiceImpl.getFrom(msg));
@@ -248,7 +243,7 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 	}
 
-	public String switchOlympic(String[] SingUpdata, MimeMessage msg, int index)
+	public String switchOlympic(JSONArray SingUpdata, MimeMessage msg, int headerCount, JSONArray signupColumns)
 			throws UnsupportedEncodingException, MessagingException {
 		String type = "";
 
@@ -264,9 +259,106 @@ public class MailParserServiceImpl implements MailParserService {
 
 		switch (type) {
 		case "TOI":
-			return TOISignUpServiceImpl.save(SingUpdata, olyId, MailServiceImpl.getFrom(msg), index);
+			return TOISignUpServiceImpl.save(SingUpdata, olyId, MailServiceImpl.getFrom(msg), headerCount,
+					signupColumns);
 		default:
 			return "55";
 		}
+	}
+
+	public JSONArray getTestObject() {
+		JSONArray text = new JSONArray();
+
+		JSONObject result = new JSONObject();
+
+		result.put("columnKey", "olympic");
+		result.put("columnName", "類別");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "chineseName");
+		result.put("columnName", "中文姓名");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "idCard");
+		result.put("columnName", "身分證");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "schoolName");
+		result.put("columnName", "校名");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "grade");
+		result.put("columnName", "年級");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "birthday");
+		result.put("columnName", "生日");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "email");
+		result.put("columnName", "email");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "area");
+		result.put("columnName", "初選考區");
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "englishName");
+		result.put("columnName", "英文姓名");
+		result.put("required", false);
+		result.put("isNull", true);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "teacher");
+		result.put("columnName", "初選指導老師");
+		result.put("required", false);
+		result.put("isNull", true);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "remark");
+		result.put("columnName", "重要備註");
+		result.put("required", false);
+		result.put("isNull", true);
+
+		text.put(result);
+		result = new JSONObject();
+
+		return text;
 	}
 }
