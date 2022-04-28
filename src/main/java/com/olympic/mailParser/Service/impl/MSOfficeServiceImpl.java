@@ -121,8 +121,6 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 		try {
 			Workbook wb = null;
 
-			SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd");
-
 			List<List> dataList = new ArrayList();
 
 			if (fileType.equals("xls")) {
@@ -144,8 +142,17 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 			for (int r = 0; r < rowCount; r++) {
 				Row row = sheet.getRow(r);
 				List data = new ArrayList();
+				int cellCount = row.getLastCellNum();
+				int count = 0;
+				if (r != 0) {
+					if (headerCount >= cellCount) {
+						cellCount = cellCount + (headerCount - cellCount);
+					} else {
+						cellCount = headerCount;
+					}
+				}
 
-				for (int columnIndex = 0; columnIndex < headerCount; columnIndex ++) {
+				for (int columnIndex = 0; columnIndex < cellCount; columnIndex++) {
 					String cellType = "";
 					Cell cell = row.getCell(columnIndex);
 					if (cell != null) {
@@ -153,44 +160,35 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 					} else {
 						cellType = "NULL";
 					}
-					String cellValue = null;
-					switch (cellType) {
-					case "STRING":
-						cellValue = cell.getStringCellValue();
-						break;
-					case "NUMERIC":
-						if (DateUtil.isCellDateFormatted(cell)) {
-							cellValue = fmt.format(cell.getDateCellValue());
-						} else {
-							int num = (int) cell.getNumericCellValue();
-							cellValue = String.valueOf(num);
+
+					String cellValue = getValue(cellType, cell);
+
+					if (r == 0) {
+						if (!"".equals(cellValue.trim())) {
+							data.add(cellValue.trim());
 						}
-						break;
-					case "NULL":
-						cellValue = "";
-						break;
-					default:
-						cellValue = "";
-					}
-
-					cellValue = FilterString.cleanXSS(cellValue);
-					cellValue = FilterString.cleanSqlInjection(cellValue);
-
-					data.add(cellValue.trim());
-				}
-				
-				int count = 0;
-				
-				for (int i = 0; i < data.size(); i ++) {
-					if ("".equals(data.get(i))) {
-						count++;
+					} else {
+						if ("".equals(cellValue.trim())) {
+							count++;
+						}
+						data.add(cellValue.trim());
 					}
 				}
-				
+
+				if (r == 0 && data.size() != headerCount) {
+					result.put("status", false);
+					result.put("msg", "header count error");
+					result.put("text", "");
+
+					deleteFile(new File(destDir + file));
+
+					return result;
+				}
+
 				if (count == headerCount) {
 					continue;
 				}
-				
+
 				dataList.add(data);
 			}
 
@@ -216,6 +214,35 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 		deleteFile(new File(destDir + file));
 
 		return result;
+	}
+
+	public String getValue(String cellType, Cell cell) {
+		SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd");
+		String cellValue = null;
+
+		switch (cellType) {
+		case "STRING":
+			cellValue = cell.getStringCellValue();
+			break;
+		case "NUMERIC":
+			if (DateUtil.isCellDateFormatted(cell)) {
+				cellValue = fmt.format(cell.getDateCellValue());
+			} else {
+				int num = (int) cell.getNumericCellValue();
+				cellValue = String.valueOf(num);
+			}
+			break;
+		case "NULL":
+			cellValue = "";
+			break;
+		default:
+			cellValue = "";
+		}
+
+		cellValue = FilterString.cleanXSS(cellValue);
+		cellValue = FilterString.cleanSqlInjection(cellValue);
+
+		return cellValue;
 	}
 
 	public void deleteFile(File file) {

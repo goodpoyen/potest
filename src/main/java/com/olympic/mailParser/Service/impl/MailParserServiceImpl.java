@@ -81,12 +81,6 @@ public class MailParserServiceImpl implements MailParserService {
 		return smtp;
 	}
 
-	/**
-	 * parser
-	 *
-	 * @param messages parser列表
-	 * @throws CsvException
-	 */
 	public void parseMessagePOP3(POP3Store stroe, POP3Folder folder)
 			throws MessagingException, IOException, CsvException {
 		folder.close(true);
@@ -111,7 +105,6 @@ public class MailParserServiceImpl implements MailParserService {
 
 			JSONObject scheduleDataResult = getOlympicScheduleData(MailServiceImpl.getSubject(msg));
 
-//            if (scheduleDataResult.getBoolean("status") && !MailServiceImpl.isSeen(msg)) {
 			if (scheduleDataResult.getBoolean("status")) {
 				MailServiceImpl.mailMessages(msg);
 
@@ -137,8 +130,8 @@ public class MailParserServiceImpl implements MailParserService {
 
 						System.out.println(content.toString());
 						if (content.getBoolean("status")) {
-							errorMessage = switchOlympic(content.getJSONArray("text"), msg, headerCount, signupColumns,
-									olyId);
+							errorMessage = switchOlympic(content.getJSONArray("text"), msg, signupColumns, olyId);
+							System.out.println(errorMessage);
 
 //							if (errorMessage == null || "".equals(errorMessage)) {
 //								mail.put("receive", MailServiceImpl.getFrom(msg));
@@ -150,6 +143,9 @@ public class MailParserServiceImpl implements MailParserService {
 //								if (errorMessage == "檔案有問題") {
 //									mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名檔案有問題");
 //									mail.put("content", "請確認CSV檔案是否有問題");
+//								} else if (errorMessage == "header naming error") {
+//									mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名欄位有誤");
+//									mail.put("content", "請確認報名欄位名稱是否有誤");
 //								} else {
 //									mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名資料有誤");
 //									mail.put("content", errorMessage);
@@ -162,6 +158,9 @@ public class MailParserServiceImpl implements MailParserService {
 							} else if (content.get("msg").equals("not ods file")) {
 								mail.put("subject", MailServiceImpl.getSubject(msg) + "-壓縮檔內檔案格式不對");
 								mail.put("content", "請確認附件壓縮檔內檔案格式");
+							} else if (content.get("msg").equals("header count error")) {
+								mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名欄位有誤");
+								mail.put("content", "請確認報名欄位數量是否有誤");
 							} else {
 								mail.put("subject", MailServiceImpl.getSubject(msg) + "-附件檔案異常");
 								mail.put("content", "附件檔案異常請重新寄送檔案");
@@ -264,8 +263,8 @@ public class MailParserServiceImpl implements MailParserService {
 		}
 	}
 
-	public String switchOlympic(JSONArray SingUpdata, MimeMessage msg, int headerCount, JSONArray signupColumns,
-			String olyId) throws UnsupportedEncodingException, MessagingException {
+	public String switchOlympic(JSONArray SingUpdata, MimeMessage msg, JSONArray signupColumns, String olyId)
+			throws UnsupportedEncodingException, MessagingException {
 		String type = "";
 
 		try {
@@ -280,8 +279,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		switch (type) {
 		case "TOI":
-			return TOISignUpServiceImpl.save(SingUpdata, olyId, MailServiceImpl.getFrom(msg), headerCount,
-					signupColumns);
+			return TOISignUpServiceImpl.save(SingUpdata, olyId, MailServiceImpl.getFrom(msg), signupColumns);
 		case "TMO":
 			return "";
 		case "IPHO":
@@ -366,7 +364,7 @@ public class MailParserServiceImpl implements MailParserService {
 		result = new JSONObject();
 
 		result.put("columnKey", "email");
-		result.put("columnName", "email");
+		result.put("columnName", "信箱");
 		result.put("required", true);
 		result.put("isNull", false);
 

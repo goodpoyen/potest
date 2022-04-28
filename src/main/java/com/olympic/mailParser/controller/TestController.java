@@ -81,6 +81,15 @@ public class TestController {
 //        String content = handler.toString(); 
 //        System.out.println("Contents of the document:" + content);
 
+//		String a = "A3234";
+//		System.out.println("性別錯誤:" + Verify.checkIdCard(a));
+//		
+//		a = "A1234";
+//		System.out.println("1完全正確:" + Verify.checkIdCard(a));
+//		
+//		a = "A2234";
+//		System.out.println("2完全正確:" + Verify.checkIdCard(a));
+
 		return "db test";
 	}
 

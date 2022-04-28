@@ -28,13 +28,12 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 	private int BATCH_SIZE = 500;
 
-	public String save(JSONArray SingUpdata, String olyId, String createrEmail, int headerCount,
-			JSONArray signupColumns) {
-
+	public String save(JSONArray SingUpdata, String olyId, String createrEmail, JSONArray signupColumns) {
 		int count = 0;
-		String[] headerData = new String[headerCount];
+		List<String> headerData = new ArrayList();
 		List<SignUpStudents> students = new ArrayList<>();
 		AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
+		errorMessage = "";
 
 		for (int index = 0; index < SingUpdata.length(); index++) {
 
@@ -42,64 +41,73 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 			if (index == 0) {
 				for (int subIndex = 0; subIndex < item.length(); subIndex++) {
-					headerData[subIndex] = item.get(subIndex).toString();
+					if (!"".equals(item.get(subIndex).toString())) {
+						headerData.add(subIndex, item.get(subIndex).toString());
+					}
 				}
 				continue;
 			}
-			
+
 			JSONObject result = processSignUpData(item, signupColumns, headerData);
-			
+
 			JSONObject saveData = result.getJSONObject("saveData");
 			String studentName = result.getString("studentName");
 			Boolean status = result.getBoolean("status");
 			String error = result.getString("error");
 
 			if (!status) {
-				if (errorMessage == null) {
-					errorMessage = "第" + (index + 1) + "筆資料-" + studentName + "-" + error;
+				if (error.equals("header naming error")) {
+					errorMessage = error;
+					break;
 				} else {
-					errorMessage += "第" + (index + 1) + "筆資料-" + studentName + "-" + error;
-				}
+					if (errorMessage == null) {
+						errorMessage = "第" + (index + 1) + "筆資料-" + studentName + "-" + error;
+					} else {
+						errorMessage += "第" + (index + 1) + "筆資料-" + studentName + "-" + error;
+					}
 
-				errorMessage += "\r\n";
+					errorMessage += "\r\n";
+				}
 			}
-			
+
 			try {
 				if (saveData.length() > 0) {
 					saveData = prepareSaveData(saveData, olyId, createrEmail);
-	
+
 					students.add(new SignUpStudents(saveData));
-	
-					if (index + 1 == SingUpdata.length()) {
-						signUpStudentsRepository.saveAll((Iterable<SignUpStudents>) students);
+				}
+
+				if (index + 1 == SingUpdata.length()) {
+					signUpStudentsRepository.saveAll((Iterable<SignUpStudents>) students);
+				} else {
+					if (count <= BATCH_SIZE) {
+						count++;
 					} else {
-						if (count <= BATCH_SIZE) {
-							count++;
-						} else {
-							signUpStudentsRepository.saveAll((Iterable<SignUpStudents>) students);
-							students = new ArrayList<>();
-							count = 0;
-						}
+						signUpStudentsRepository.saveAll((Iterable<SignUpStudents>) students);
+						students = new ArrayList<>();
+						count = 0;
 					}
 				}
 			} catch (Exception e) {
 				return "檔案有問題";
 			}
 		}
-		System.out.println(errorMessage);
+
 		return errorMessage;
 	}
-	
-	public JSONObject processSignUpData(JSONArray item, JSONArray signupColumns, String[] headerData) {
+
+	public JSONObject processSignUpData(JSONArray item, JSONArray signupColumns, List<String> headerData) {
 		JSONObject result = new JSONObject();
 		JSONObject saveData = new JSONObject();
 		String studentName = "";
 		Boolean status = true;
 		String error = "";
+		int checkCount = 0;
 
 		for (int subIndex = 0; subIndex < item.length(); subIndex++) {
 			for (int data = 0; data < signupColumns.length(); data++) {
-				if (headerData[subIndex].equals(signupColumns.getJSONObject(data).getString("columnName"))) {
+				if (headerData.get(subIndex).equals(signupColumns.getJSONObject(data).getString("columnName"))) {
+					checkCount++;
 					JSONObject checkResult = checkSignUpData(signupColumns.getJSONObject(data),
 							item.get(subIndex).toString());
 
@@ -120,15 +128,24 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 					}
 
 					error += checkResult.getString("error");
+
+					break;
 				}
 			}
 		}
-		
-		result.put("status", status);
-		result.put("saveData", saveData);
-		result.put("error", error);
-		result.put("studentName", studentName);
-		
+
+		if (headerData.size() == checkCount) {
+			result.put("status", status);
+			result.put("saveData", saveData);
+			result.put("error", error);
+			result.put("studentName", studentName);
+		} else {
+			result.put("status", false);
+			result.put("saveData", saveData);
+			result.put("error", "header naming error");
+			result.put("studentName", studentName);
+		}
+
 		return result;
 	}
 
@@ -140,10 +157,20 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 		if (!student.getBoolean("isNull") && "".equals(value)) {
 			status = false;
 			error += student.get("columnName") + "不能為空;";
+		} else if (student.getString("columnKey").equals("chineseName")) {
+			if (!Verify.checkLength(value, 20)) {
+				status = false;
+				error += "中文姓名過長;";
+			}
 		} else if (student.getString("columnKey").equals("idCard")) {
 			if (!Verify.checkIdCard(value)) {
 				status = false;
 				error += "身分證有誤;";
+			}
+		} else if (student.getString("columnKey").equals("schoolName")) {
+			if (!Verify.checkLength(value, 10)) {
+				status = false;
+				error += "校名過長;";
 			}
 		} else if (student.getString("columnKey").equals("grade")) {
 			if (!Verify.checkValue(Integer.parseInt(value), 7, 12)) {
@@ -151,7 +178,7 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 				error += "年級有誤;";
 			}
 		} else if (student.getString("columnKey").equals("birthday")) {
-			if (!Verify.checkDate(value)) {
+			if (!Verify.checkDate(value, "yyyy/MM")) {
 				status = false;
 				error += "生日有誤;";
 			}
@@ -159,6 +186,31 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 			if (!Verify.checkEmail(value)) {
 				status = false;
 				error += "信箱有誤;";
+			}
+		} else if (student.getString("columnKey").equals("area")) {
+			if (!Verify.checkLength(value, 10)) {
+				status = false;
+				error += "初選考區過長;";
+			}
+		} else if (student.getString("columnKey").equals("englishName")) {
+			if (!Verify.checkLength(value, 20)) {
+				status = false;
+				error += "英文姓名過長;";
+			}
+		} else if (student.getString("columnKey").equals("teacher")) {
+			if (!Verify.checkLength(value, 20)) {
+				status = false;
+				error += "初選指導老師過長;";
+			}
+		} else if (student.getString("columnKey").equals("remark")) {
+			if (!Verify.checkLength(value, 20)) {
+				status = false;
+				error += "重要備註過長;";
+			}
+
+			if (!Verify.checkMedical(value)) {
+				status = false;
+				error += "重要備註不能包含疾病資料;";
 			}
 		}
 
@@ -174,7 +226,7 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 	}
 
 	public JSONObject prepareSaveData(JSONObject saveData, String olyId, String createrEmail) {
-		saveData.put("idCard", AES256ServiceImpl.encode(saveData.getString("idCard")));
+		saveData.put("idCard", AES256ServiceImpl.encode(saveData.getString("idCard").toUpperCase()));
 		saveData.put("birthday", AES256ServiceImpl.encode(saveData.getString("birthday")));
 		saveData.put("email", AES256ServiceImpl.encode(saveData.getString("email")));
 
@@ -184,7 +236,7 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 
 		SignUpStudents student = signUpStudentsRepository.findByChineseNameAndIdCard(saveData.getString("chineseName"),
 				saveData.getString("idCard"));
-		
+
 		if (student != null) {
 			saveData.put("stId", student.getStId());
 		}

@@ -64,7 +64,7 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 				}
 
 				String CSVFile = newFile.replace("ods", "csv");
-				
+
 				text = FilterString.cleanXSS(text);
 				text = FilterString.cleanSqlInjection(text);
 
@@ -123,28 +123,43 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 
 				for (int nRowIndex = 0; nRowIndex < nRowCount; nRowIndex++) {
 					List data = new ArrayList();
+					int count = 0;
 					for (int nColIndex = 0; nColIndex < nColCount; nColIndex++) {
 						String value = spreadsheet.getSheet(0).getCellAt(nColIndex, nRowIndex).getTextValue();
 						value = FilterString.cleanXSS(value);
 						value = FilterString.cleanSqlInjection(value);
-						
-						data.add(value.trim());
-					}
-					int count = 0;
-					
-					for (int i = 0; i < data.size(); i ++) {
-						if ("".equals(data.get(i))) {
-							count++;
+
+						if (nRowIndex == 0) {
+							if (!"".equals(value.trim())) {
+								data.add(value.trim());
+							}
+						} else {
+							if ("".equals(value.trim())) {
+								count++;
+							}
+							if (nColIndex < headerCount) {
+								data.add(value.trim());
+							}
 						}
 					}
-					
+
+					if (nRowIndex == 0 && data.size() != headerCount) {
+						result.put("status", false);
+						result.put("msg", "header count error");
+						result.put("text", "");
+
+						deleteFile(new File(destDir + newFile));
+
+						return result;
+					}
+
 					if (count == headerCount) {
 						continue;
 					}
-					
+
 					dataList.add(data);
 				}
-				
+
 				JSONArray text = new JSONArray(dataList);
 
 				result.put("status", true);

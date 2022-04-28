@@ -31,12 +31,13 @@ public interface MailParserService {
 	void parseMessagePOP3(POP3Store stroe, POP3Folder folder) throws MessagingException, IOException, CsvException;
 
 	void parseMessageIMAP(IMAPStore stroe, IMAPFolder folder) throws MessagingException, IOException, CsvException;
-	
+
 	JSONObject getOlympicScheduleData(String subject);
 
-	String switchOlympic(JSONArray SingUpdata, MimeMessage msg, int headerCount, JSONArray signupColumns, String olyId) throws UnsupportedEncodingException, MessagingException;
+	String switchOlympic(JSONArray SingUpdata, MimeMessage msg, JSONArray signupColumns, String olyId)
+			throws UnsupportedEncodingException, MessagingException;
 
 	JSONObject getFileType(MimeMessage msg) throws JSONException, IOException, MessagingException;
-	
+
 	JSONObject readAttachment(String fileType, String newFile, int headerCount, String password) throws IOException;
 }
