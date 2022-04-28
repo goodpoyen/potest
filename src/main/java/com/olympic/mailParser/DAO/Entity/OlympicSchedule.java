@@ -31,4 +31,7 @@ public class OlympicSchedule {
 
 	@Column(name = "end")
 	public String end;
+	
+	@Column(name = "rules")
+	public String rules;
 }

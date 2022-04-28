@@ -8,5 +8,7 @@ public interface TOISignUpService {
 	
 	JSONObject checkSignUpData(JSONObject student, String value);
 	
+	JSONObject processSignUpData(JSONArray item, JSONArray signupColumns, String[] headerData);
+	
 	JSONObject prepareSaveData(JSONObject saveData, String olyId, String createrEmail);
 }

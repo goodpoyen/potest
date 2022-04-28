@@ -55,8 +55,6 @@ public class MailParserServiceImpl implements MailParserService {
 
 	private String errorMessage;
 
-	private String olyId;
-
 	public POP3Store mailConnectPOP3() throws Exception {
 		return MailServiceImpl.mailConnectPOP3("mail.csie.ntnu.edu.tw", "tor@csie.ntnu.edu.tw", "tor@CSIE@6690");
 	}
@@ -111,20 +109,17 @@ public class MailParserServiceImpl implements MailParserService {
 		for (int i = 0, count = messages.length; i < count; i++) {
 			MimeMessage msg = (MimeMessage) messages[i];
 
-			olyId = getOlympicSchedule(MailServiceImpl.getSubject(msg));
-			JSONArray signupColumns = getTestObject();
-			int headerCount = 0;
+			JSONObject scheduleDataResult = getOlympicScheduleData(MailServiceImpl.getSubject(msg));
 
-			for (int data = 0; data < signupColumns.length(); data++) {
-				if (signupColumns.getJSONObject(data).getBoolean("required")) {
-					headerCount++;
-				}
-			}
-
-//            if (MailServiceImpl.getSubject(msg).contains("[TOI]奧林匹亞初選") ) {
-//            if (!"".equals(olyId) && olyId != null && !MailServiceImpl.isSeen(msg)) {
-			if (!"".equals(olyId) && olyId != null) {
+//            if (scheduleDataResult.getBoolean("status") && !MailServiceImpl.isSeen(msg)) {
+			if (scheduleDataResult.getBoolean("status")) {
 				MailServiceImpl.mailMessages(msg);
+
+				int headerCount = scheduleDataResult.getInt("headerCount");
+
+				String olyId = scheduleDataResult.getString("olyId");
+
+				JSONArray signupColumns = scheduleDataResult.getJSONArray("signupColumns");
 
 				boolean isContainerAttachment = MailServiceImpl.isContainAttachment(msg);
 
@@ -138,16 +133,12 @@ public class MailParserServiceImpl implements MailParserService {
 
 						String newFile = MailServiceImpl.saveAttachment(msg, mailFilePath, fileType);
 
-						JSONObject content = new JSONObject();
-						if (fileType.equals("xlsx") || fileType.equals("xls")) {
-							content = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, "123456",
-									headerCount);
-						} else if (fileType.equals("zip")) {
-							content = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, "123456", headerCount);
-						}
+						JSONObject content = readAttachment(fileType, newFile, headerCount, "123456");
+
 						System.out.println(content.toString());
 						if (content.getBoolean("status")) {
-							errorMessage = switchOlympic(content.getJSONArray("text"), msg, headerCount, signupColumns);
+							errorMessage = switchOlympic(content.getJSONArray("text"), msg, headerCount, signupColumns,
+									olyId);
 
 //							if (errorMessage == null || "".equals(errorMessage)) {
 //								mail.put("receive", MailServiceImpl.getFrom(msg));
@@ -216,8 +207,12 @@ public class MailParserServiceImpl implements MailParserService {
 		return result;
 	}
 
-	public String getOlympicSchedule(String subject) {
+	public JSONObject getOlympicScheduleData(String subject) {
+		JSONObject result = new JSONObject();
+
 		if (Verify.checkSubject(subject)) {
+			JSONArray signupColumns = new JSONArray();
+
 			String olyId = "";
 
 			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
@@ -234,17 +229,43 @@ public class MailParserServiceImpl implements MailParserService {
 					if (key.equals("oly_id")) {
 						olyId = data.get(key).toString();
 					}
+
+					if (key.equals("rules")) {
+						signupColumns = new JSONArray(data.get(key).toString());
+					}
+				}
+			}
+			int headerCount = 0;
+
+			for (int data = 0; data < signupColumns.length(); data++) {
+				if (signupColumns.getJSONObject(data).getBoolean("required")) {
+					headerCount++;
 				}
 			}
 
-			return olyId;
+			if (!"".equals(olyId) && olyId != null) {
+				result.put("status", true);
+			} else {
+				result.put("status", false);
+			}
+
+			result.put("olyId", olyId);
+			result.put("signupColumns", signupColumns);
+			result.put("headerCount", headerCount);
+
+			return result;
 		} else {
-			return "";
+			result.put("status", false);
+			result.put("olyId", "");
+			result.put("signupColumns", new JSONArray());
+			result.put("headerCount", 0);
+
+			return result;
 		}
 	}
 
-	public String switchOlympic(JSONArray SingUpdata, MimeMessage msg, int headerCount, JSONArray signupColumns)
-			throws UnsupportedEncodingException, MessagingException {
+	public String switchOlympic(JSONArray SingUpdata, MimeMessage msg, int headerCount, JSONArray signupColumns,
+			String olyId) throws UnsupportedEncodingException, MessagingException {
 		String type = "";
 
 		try {
@@ -261,9 +282,34 @@ public class MailParserServiceImpl implements MailParserService {
 		case "TOI":
 			return TOISignUpServiceImpl.save(SingUpdata, olyId, MailServiceImpl.getFrom(msg), headerCount,
 					signupColumns);
+		case "TMO":
+			return "";
+		case "IPHO":
+			return "";
+		case "TWICHO":
+			return "";
+		case "CTBO":
+			return "";
+		case "IESO":
+			return "";
+		case "TWIJSO":
+			return "";
 		default:
 			return "55";
 		}
+	}
+
+	public JSONObject readAttachment(String fileType, String newFile, int headerCount, String password)
+			throws IOException {
+		JSONObject result = new JSONObject();
+
+		if (fileType.equals("xlsx") || fileType.equals("xls")) {
+			result = MSOfficeServiceImpl.readExcel(newFile, fileType, mailFilePath, password, headerCount);
+		} else if (fileType.equals("zip")) {
+			result = OpenOfficeServiceImpl.readODS(newFile, mailFilePath, password, headerCount);
+		}
+
+		return result;
 	}
 
 	public JSONArray getTestObject() {

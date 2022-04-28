@@ -73,10 +73,34 @@ public class Verify {
 
 		return status;
 	}
-
+	
 	public Boolean checkSubject(String olympic) {
 		Boolean status = false;
 
+		if (olympic.contains("[TMO]奧林匹亞")) {
+			status = true;
+		}
+		
+		if (olympic.contains("[IPHO]奧林匹亞")) {
+			status = true;
+		}
+		
+		if (olympic.contains("[TWICHO]奧林匹亞")) {
+			status = true;
+		}
+		
+		if (olympic.contains("[CTBO]奧林匹亞")) {
+			status = true;
+		}
+		
+		if (olympic.contains("[IESO]奧林匹亞")) {
+			status = true;
+		}
+		
+		if (olympic.contains("[TWIJSO]奧林匹亞")) {
+			status = true;
+		}
+		
 		if (olympic.contains("[TOI]奧林匹亞")) {
 			status = true;
 		}
@@ -85,7 +109,30 @@ public class Verify {
 	}
 
 	public String checkOlympic(String olympic) {
-
+		if (olympic.contains("[TMO]")) {
+			return "TMO";
+		}
+		
+		if (olympic.contains("[IPHO]")) {
+			return "IPHO";
+		}
+		
+		if (olympic.contains("[TWICHO]")) {
+			return "TWICHO";
+		}
+		
+		if (olympic.contains("[CTBO]")) {
+			return "CTBO";
+		}
+		
+		if (olympic.contains("[IESO]")) {
+			return "IESO";
+		}
+		
+		if (olympic.contains("[TWIJSO]")) {
+			return "TWIJSO";
+		}
+		
 		if (olympic.contains("[TOI]")) {
 			return "TOI";
 		}

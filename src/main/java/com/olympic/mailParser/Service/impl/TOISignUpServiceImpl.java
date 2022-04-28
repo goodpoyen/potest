@@ -46,38 +46,13 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 				}
 				continue;
 			}
-
-			JSONObject saveData = new JSONObject();
-			String studentName = "";
-			Boolean status = true;
-			String error = "";
-
-			for (int subIndex = 0; subIndex < item.length(); subIndex++) {
-				for (int data = 0; data < signupColumns.length(); data++) {
-					if (headerData[subIndex].equals(signupColumns.getJSONObject(data).getString("columnName"))) {
-						JSONObject checkResult = checkSignUpData(signupColumns.getJSONObject(data),
-								item.get(subIndex).toString());
-
-						if ("".equals(studentName)
-								&& signupColumns.getJSONObject(data).getString("columnKey").equals("chineseName")) {
-							studentName = item.get(subIndex).toString();
-						}
-
-						if (!checkResult.getBoolean("status") && status) {
-							status = false;
-						}
-
-						if (status) {
-							saveData.put(signupColumns.getJSONObject(data).getString("columnKey"),
-									item.get(subIndex).toString());
-						} else {
-							saveData = new JSONObject();
-						}
-
-						error += checkResult.getString("error");
-					}
-				}
-			}
+			
+			JSONObject result = processSignUpData(item, signupColumns, headerData);
+			
+			JSONObject saveData = result.getJSONObject("saveData");
+			String studentName = result.getString("studentName");
+			Boolean status = result.getBoolean("status");
+			String error = result.getString("error");
 
 			if (!status) {
 				if (errorMessage == null) {
@@ -111,8 +86,50 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 				return "檔案有問題";
 			}
 		}
-//		System.out.println(errorMessage);
+		System.out.println(errorMessage);
 		return errorMessage;
+	}
+	
+	public JSONObject processSignUpData(JSONArray item, JSONArray signupColumns, String[] headerData) {
+		JSONObject result = new JSONObject();
+		JSONObject saveData = new JSONObject();
+		String studentName = "";
+		Boolean status = true;
+		String error = "";
+
+		for (int subIndex = 0; subIndex < item.length(); subIndex++) {
+			for (int data = 0; data < signupColumns.length(); data++) {
+				if (headerData[subIndex].equals(signupColumns.getJSONObject(data).getString("columnName"))) {
+					JSONObject checkResult = checkSignUpData(signupColumns.getJSONObject(data),
+							item.get(subIndex).toString());
+
+					if ("".equals(studentName)
+							&& signupColumns.getJSONObject(data).getString("columnKey").equals("chineseName")) {
+						studentName = item.get(subIndex).toString();
+					}
+
+					if (!checkResult.getBoolean("status") && status) {
+						status = false;
+					}
+
+					if (status) {
+						saveData.put(signupColumns.getJSONObject(data).getString("columnKey"),
+								item.get(subIndex).toString());
+					} else {
+						saveData = new JSONObject();
+					}
+
+					error += checkResult.getString("error");
+				}
+			}
+		}
+		
+		result.put("status", status);
+		result.put("saveData", saveData);
+		result.put("error", error);
+		result.put("studentName", studentName);
+		
+		return result;
 	}
 
 	public JSONObject checkSignUpData(JSONObject student, String value) {
@@ -136,7 +153,7 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 		} else if (student.getString("columnKey").equals("birthday")) {
 			if (!Verify.checkDate(value)) {
 				status = false;
-				error += "出生日期有誤;";
+				error += "生日有誤;";
 			}
 		} else if (student.getString("columnKey").equals("email")) {
 			if (!Verify.checkEmail(value)) {
