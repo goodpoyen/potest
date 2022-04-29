@@ -14,6 +14,7 @@ public class Scheduler {
 	private MailParserServiceImpl MailParserServiceImpl;
 
 //	@Scheduled(cron = "0 * * * * ?")
+//	@Scheduled(initialDelay = 3 * 1000, fixedDelay = 3 * 60 * 1000)
 	public void singUpMail() throws Exception {
 		IMAPStore store = MailParserServiceImpl.mailConnectIMAP();
 		IMAPFolder folder = MailParserServiceImpl.getIMAPFolder(store);

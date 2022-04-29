@@ -6,6 +6,10 @@ spring:
     username: poyen
     password: py@250131
     driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      file-size-threshold: 10MB
+      max-request-size: 100MB
 
 jpa:  
   database : MYSQL  

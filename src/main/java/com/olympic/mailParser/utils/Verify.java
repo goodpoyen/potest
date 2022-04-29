@@ -5,6 +5,8 @@ import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -220,5 +222,112 @@ public class Verify {
 		}
 
 		return status;
+	}
+	
+	public JSONArray getColumnSet() {
+		JSONArray text = new JSONArray();
+
+		JSONObject result = new JSONObject();
+
+		result.put("columnKey", "olympic");
+		result.put("columnName", "類別");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "chineseName");
+		result.put("columnName", "中文姓名");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "idCard");
+		result.put("columnName", "身分證");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "schoolName");
+		result.put("columnName", "校名");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "grade");
+		result.put("columnName", "年級");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "birthday");
+		result.put("columnName", "生日");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "email");
+		result.put("columnName", "信箱");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "area");
+		result.put("columnName", "初選考區");
+		result.put("sysRequired", true);
+		result.put("required", true);
+		result.put("isNull", false);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "englishName");
+		result.put("columnName", "英文姓名");
+		result.put("sysRequired", false);
+		result.put("required", false);
+		result.put("isNull", true);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "teacher");
+		result.put("columnName", "初選指導老師");
+		result.put("sysRequired", false);
+		result.put("required", false);
+		result.put("isNull", true);
+
+		text.put(result);
+		result = new JSONObject();
+
+		result.put("columnKey", "remark");
+		result.put("columnName", "重要備註");
+		result.put("sysRequired", false);
+		result.put("required", false);
+		result.put("isNull", true);
+
+		text.put(result);
+		result = new JSONObject();
+
+		return text;
 	}
 }

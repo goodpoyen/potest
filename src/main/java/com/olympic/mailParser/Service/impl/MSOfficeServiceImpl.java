@@ -138,6 +138,16 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 
 			Sheet sheet = wb.getSheetAt(0);
 			int rowCount = sheet.getPhysicalNumberOfRows();
+			
+			if (rowCount >= 100000) {
+				result.put("status", false);
+				result.put("msg", "over row data");
+				result.put("text", "");
+
+				deleteFile(new File(destDir + file));
+				
+				return result;
+			}
 
 			for (int r = 0; r < rowCount; r++) {
 				Row row = sheet.getRow(r);

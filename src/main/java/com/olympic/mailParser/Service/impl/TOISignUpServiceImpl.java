@@ -157,6 +157,11 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 		if (!student.getBoolean("isNull") && "".equals(value)) {
 			status = false;
 			error += student.get("columnName") + "不能為空;";
+		} else if (student.getString("columnKey").equals("olympic")) {
+			if (!Verify.checkLength(value, 6)) {
+				status = false;
+				error += "類別過長;";
+			}
 		} else if (student.getString("columnKey").equals("chineseName")) {
 			if (!Verify.checkLength(value, 20)) {
 				status = false;
@@ -231,7 +236,7 @@ public class TOISignUpServiceImpl implements TOISignUpService {
 		saveData.put("email", AES256ServiceImpl.encode(saveData.getString("email")));
 
 		saveData.put("olympic", saveData.getString("olympic").toUpperCase());
-		saveData.put("createrEmail", createrEmail);
+		saveData.put("creater", createrEmail);
 		saveData.put("olyId", olyId);
 
 		SignUpStudents student = signUpStudentsRepository.findByChineseNameAndIdCard(saveData.getString("chineseName"),

@@ -69,6 +69,7 @@ public class TestController {
 
 	@GetMapping("/db")
 	public String db() throws Exception {
+		System.out.println(Verify.getColumnSet());
 
 //		IWorkPackageParser iWorkParser = new IWorkPackageParser();
 //		InputStream  inputstream = new FileInputStream(new File(mailFilePath + "test13.numbers"));

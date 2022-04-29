@@ -117,10 +117,19 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 
 			try {
 				SpreadSheet spreadsheet = SpreadSheet.createFromFile(new File(destDir + newFile));
-
 				int nColCount = spreadsheet.getSheet(0).getColumnCount();
 				int nRowCount = spreadsheet.getSheet(0).getRowCount();
+				
+				if (nRowCount >= 100000) {
+					result.put("status", false);
+					result.put("msg", "over row data");
+					result.put("text", "");
 
+					deleteFile(new File(destDir + newFile));
+					
+					return result;
+				}
+				
 				for (int nRowIndex = 0; nRowIndex < nRowCount; nRowIndex++) {
 					List data = new ArrayList();
 					int count = 0;
@@ -142,7 +151,7 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 							}
 						}
 					}
-
+			
 					if (nRowIndex == 0 && data.size() != headerCount) {
 						result.put("status", false);
 						result.put("msg", "header count error");

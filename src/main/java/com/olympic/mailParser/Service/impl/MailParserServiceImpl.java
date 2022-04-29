@@ -161,6 +161,9 @@ public class MailParserServiceImpl implements MailParserService {
 							} else if (content.get("msg").equals("header count error")) {
 								mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名欄位有誤");
 								mail.put("content", "請確認報名欄位數量是否有誤");
+							} else if (content.get("msg").equals("over row data")) {
+								mail.put("subject", MailServiceImpl.getSubject(msg) + "-報名筆數過多");
+								mail.put("content", "報名筆數不可超過十萬筆 (含十萬筆)");
 							} else {
 								mail.put("subject", MailServiceImpl.getSubject(msg) + "-附件檔案異常");
 								mail.put("content", "附件檔案異常請重新寄送檔案");
@@ -237,7 +240,8 @@ public class MailParserServiceImpl implements MailParserService {
 			int headerCount = 0;
 
 			for (int data = 0; data < signupColumns.length(); data++) {
-				if (signupColumns.getJSONObject(data).getBoolean("required")) {
+				if (signupColumns.getJSONObject(data).getBoolean("required")
+						|| signupColumns.getJSONObject(data).getBoolean("sysRequired")) {
 					headerCount++;
 				}
 			}
@@ -317,6 +321,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "olympic");
 		result.put("columnName", "類別");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -325,6 +330,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "chineseName");
 		result.put("columnName", "中文姓名");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -333,6 +339,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "idCard");
 		result.put("columnName", "身分證");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -341,6 +348,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "schoolName");
 		result.put("columnName", "校名");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -349,6 +357,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "grade");
 		result.put("columnName", "年級");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -357,6 +366,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "birthday");
 		result.put("columnName", "生日");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -365,6 +375,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "email");
 		result.put("columnName", "信箱");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -373,6 +384,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "area");
 		result.put("columnName", "初選考區");
+		result.put("sysRequired", true);
 		result.put("required", true);
 		result.put("isNull", false);
 
@@ -381,6 +393,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "englishName");
 		result.put("columnName", "英文姓名");
+		result.put("sysRequired", false);
 		result.put("required", false);
 		result.put("isNull", true);
 
@@ -389,6 +402,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "teacher");
 		result.put("columnName", "初選指導老師");
+		result.put("sysRequired", false);
 		result.put("required", false);
 		result.put("isNull", true);
 
@@ -397,6 +411,7 @@ public class MailParserServiceImpl implements MailParserService {
 
 		result.put("columnKey", "remark");
 		result.put("columnName", "重要備註");
+		result.put("sysRequired", false);
 		result.put("required", false);
 		result.put("isNull", true);
 
