@@ -1,12 +1,7 @@
 package com.olympic.mailParser.controller;
 
-import java.io.UnsupportedEncodingException;
+import java.time.format.DateTimeFormatter;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,9 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
 import com.olympic.mailParser.Service.impl.CSVFileServiceImpl;
 import com.olympic.mailParser.Service.impl.MSOfficeServiceImpl;
-import com.olympic.mailParser.Service.impl.MailParserServiceImpl;
+import com.olympic.mailParser.Service.impl.SignUpMailParserServiceImpl;
 import com.olympic.mailParser.Service.impl.TOISignUpServiceImpl;
 import com.olympic.mailParser.Service.impl.ZipFileServiceImpl;
+import com.olympic.mailParser.utils.Tool;
 import com.olympic.mailParser.utils.Verify;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
@@ -26,7 +22,7 @@ import com.sun.mail.imap.IMAPStore;
 public class TestController {
 
 	@Autowired
-	MailParserServiceImpl MailParserServiceImpl;
+	SignUpMailParserServiceImpl SignUpMailParserServiceImpl;
 
 	@Autowired
 	ZipFileServiceImpl ZipFileServiceImpl;
@@ -36,6 +32,9 @@ public class TestController {
 
 	@Autowired
 	private Verify Verify;
+	
+	@Autowired
+	private Tool Tool;
 
 	@Autowired
 	private CSVFileServiceImpl CSVFileServiceImpl;
@@ -53,10 +52,10 @@ public class TestController {
 
 	@GetMapping("/test")
 	public String home() throws Exception {
-		IMAPStore store = MailParserServiceImpl.mailConnectIMAP();
-		IMAPFolder folder = MailParserServiceImpl.getIMAPFolder(store);
+		IMAPStore store = SignUpMailParserServiceImpl.mailConnectIMAP();
+		IMAPFolder folder = SignUpMailParserServiceImpl.getIMAPFolder(store);
 
-		MailParserServiceImpl.parseMessageIMAP(store, folder);
+		SignUpMailParserServiceImpl.parseMessageIMAP(store, folder);
 
 		return "finish";
 	}
@@ -69,7 +68,6 @@ public class TestController {
 
 	@GetMapping("/db")
 	public String db() throws Exception {
-		System.out.println(Verify.getColumnSet());
 
 //		IWorkPackageParser iWorkParser = new IWorkPackageParser();
 //		InputStream  inputstream = new FileInputStream(new File(mailFilePath + "test13.numbers"));
@@ -91,7 +89,18 @@ public class TestController {
 //		a = "A2234";
 //		System.out.println("2完全正確:" + Verify.checkIdCard(a));
 
+		String b = Tool.getRandomString(3, "[^A-Z]");
+		String c = Tool.getRandomString(3, "[^a-z]");
+		String d = Tool.getRandomString(3, "[^0-9]");
+//		String e = Tool.getRandomString(1, "[^\\W]");
+		String e = Tool.getRandomSymbol();
+		String pwd = b + c + d + e;
+
+		System.out.println("隨機產生: "+ pwd);
+		pwd = Tool.shuffle(pwd);
+		System.out.println("重新排列: "+ pwd);
+		System.out.println("MD5: "+ Tool.getMD5(pwd));
+		System.out.println("------------------------");
 		return "db test";
 	}
-
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
-import com.olympic.mailParser.Service.MailParserService;
+import com.olympic.mailParser.Service.SignUpMailParserService;
 import com.olympic.mailParser.utils.Verify;
 import com.opencsv.exceptions.CsvException;
 import com.sun.mail.imap.IMAPFolder;
@@ -30,7 +29,7 @@ import com.sun.mail.pop3.POP3Folder;
 import com.sun.mail.pop3.POP3Store;
 
 @Service
-public class MailParserServiceImpl implements MailParserService {
+public class SignUpMailParserServiceImpl implements SignUpMailParserService {
 
 	@Value("${mailFilePath}")
 	private String mailFilePath;
