@@ -1,6 +1,8 @@
 package com.olympic.mailParser.controller;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -88,6 +90,17 @@ public class TestController {
 //		
 //		a = "A2234";
 //		System.out.println("2完全正確:" + Verify.checkIdCard(a));
+		
+		List<String> headerData = new ArrayList();
+		
+		headerData.add("123");
+		headerData.add("456");
+		headerData.add("789");
+		
+		System.out.println(headerData.get(1));
+		System.out.println(headerData.remove(1));
+		System.out.println(headerData.get(1));
+		
 
 		String b = Tool.getRandomString(3, "[^A-Z]");
 		String c = Tool.getRandomString(3, "[^a-z]");
