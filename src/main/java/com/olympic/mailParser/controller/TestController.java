@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
+import com.olympic.mailParser.Service.impl.AES256ServiceImpl;
 import com.olympic.mailParser.Service.impl.CSVFileServiceImpl;
 import com.olympic.mailParser.Service.impl.MSOfficeServiceImpl;
 import com.olympic.mailParser.Service.impl.SignUpMailParserServiceImpl;
@@ -46,6 +47,9 @@ public class TestController {
 
 	@Autowired
 	private TOISignUpServiceImpl TOISignUpServiceImpl;
+	
+	@Autowired
+	private AES256ServiceImpl AES256ServiceImpl;
 
 	@Value("${mailFilePath}")
 	private String mailFilePath;
@@ -91,29 +95,35 @@ public class TestController {
 //		a = "A2234";
 //		System.out.println("2完全正確:" + Verify.checkIdCard(a));
 		
-		List<String> headerData = new ArrayList();
+//		List<String> headerData = new ArrayList();
+//		
+//		headerData.add("123");
+//		headerData.add("456");
+//		headerData.add("789");
+//		
+//		System.out.println(headerData.get(1));
+//		System.out.println(headerData.remove(1));
+//		System.out.println(headerData.get(1));
+//		
+//
+//		String b = Tool.getRandomString(3, "[^A-Z]");
+//		String c = Tool.getRandomString(3, "[^a-z]");
+//		String d = Tool.getRandomString(3, "[^0-9]");
+////		String e = Tool.getRandomString(1, "[^\\W]");
+//		String e = Tool.getRandomSymbol();
+//		String pwd = b + c + d + e;
+//
+//		System.out.println("隨機產生: "+ pwd);
+//		pwd = Tool.shuffle(pwd);
+//		System.out.println("重新排列: "+ pwd);
+//		System.out.println("MD5: "+ Tool.getMD5(pwd));
+//		System.out.println("------------------------");
 		
-		headerData.add("123");
-		headerData.add("456");
-		headerData.add("789");
+		AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
+		System.out.println(AES256ServiceImpl.encode("A1235"));
+		System.out.println(AES256ServiceImpl.decode("2db38a0ce3d74f740d653b67addf9bb1b0f1b62bf7966bff1d249f6bebe19394"));
+//		AES256ServiceImpl.decode("78754f08fef7104dcdc4860108c11a6c");
 		
-		System.out.println(headerData.get(1));
-		System.out.println(headerData.remove(1));
-		System.out.println(headerData.get(1));
-		
-
-		String b = Tool.getRandomString(3, "[^A-Z]");
-		String c = Tool.getRandomString(3, "[^a-z]");
-		String d = Tool.getRandomString(3, "[^0-9]");
-//		String e = Tool.getRandomString(1, "[^\\W]");
-		String e = Tool.getRandomSymbol();
-		String pwd = b + c + d + e;
-
-		System.out.println("隨機產生: "+ pwd);
-		pwd = Tool.shuffle(pwd);
-		System.out.println("重新排列: "+ pwd);
-		System.out.println("MD5: "+ Tool.getMD5(pwd));
-		System.out.println("------------------------");
 		return "db test";
 	}
 }

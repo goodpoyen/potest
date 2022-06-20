@@ -34,4 +34,7 @@ public class OlympicSchedule {
 	
 	@Column(name = "rules")
 	public String rules;
+	
+	@Column(name = "type")
+	public String type;
 }
