@@ -37,4 +37,10 @@ public class OlympicSchedule {
 	
 	@Column(name = "type")
 	public String type;
+	
+	@Column(name = "code_name")
+	public String codeName;
+	
+	@Column(name = "year")
+	public String year;
 }

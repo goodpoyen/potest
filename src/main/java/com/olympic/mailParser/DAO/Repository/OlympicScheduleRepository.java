@@ -12,5 +12,4 @@ public interface OlympicScheduleRepository extends JpaRepository<OlympicSchedule
 
 	@Query(value = "select oly_id, signup_name, rules FROM olympic_schedule where signup_name = ?1 and start <= ?2 and end >= ?2", nativeQuery = true)
 	List<Map<String, Object>> getOlympicSchedule(String signupName, String nowDate);
-
 }

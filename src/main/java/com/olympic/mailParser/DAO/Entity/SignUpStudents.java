@@ -49,20 +49,20 @@ public class SignUpStudents {
 
 	@Column(name = "area")
 	public String area;
-	
+
 	@Column(name = "english_name")
 	public String englishName;
-	
+
 	@Column(name = "teacher")
 	public String teacher;
-	
+
 	@Column(name = "remark")
 	public String remark;
 
 	@Column(name = "creater")
 	public String creater;
-	
-	public SignUpStudents (JSONObject students) {
+
+	public SignUpStudents(JSONObject students) {
 		this.olyId = "";
 		this.chineseName = "";
 		this.olympic = "";
@@ -76,55 +76,55 @@ public class SignUpStudents {
 		this.teacher = "";
 		this.remark = "";
 		this.creater = "";
-		
+
 		if (!students.isNull("stId")) {
 			this.stId = students.getInt("stId");
 		}
-		
+
 		if (!students.isNull("olyId")) {
 			this.olyId = students.getString("olyId");
 		}
-		
+
 		if (!students.isNull("chineseName")) {
 			this.chineseName = students.getString("chineseName");
 		}
-		
+
 		if (!students.isNull("olympic")) {
 			this.olympic = students.getString("olympic");
 		}
-		
+
 		if (!students.isNull("idCard")) {
 			this.idCard = students.getString("idCard");
 		}
-		
+
 		if (!students.isNull("schoolName")) {
 			this.schoolName = students.getString("schoolName");
 		}
-		
+
 		if (!students.isNull("grade")) {
 			this.grade = students.getString("grade");
 		}
-		
+
 		if (!students.isNull("birthday")) {
 			this.birthday = students.getString("birthday");
 		}
-		
+
 		if (!students.isNull("email")) {
 			this.email = students.getString("email");
 		}
-		
+
 		if (!students.isNull("area")) {
 			this.area = students.getString("area");
 		}
-		
+
 		if (!students.isNull("teacher")) {
 			this.teacher = students.getString("teacher");
 		}
-		
+
 		if (!students.isNull("remark")) {
 			this.remark = students.getString("remark");
 		}
-		
+
 		if (!students.isNull("creater")) {
 			this.creater = students.getString("creater");
 		}
