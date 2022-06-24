@@ -119,17 +119,17 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 				SpreadSheet spreadsheet = SpreadSheet.createFromFile(new File(destDir + newFile));
 				int nColCount = spreadsheet.getSheet(0).getColumnCount();
 				int nRowCount = spreadsheet.getSheet(0).getRowCount();
-				
+
 				if (nRowCount >= 100000) {
 					result.put("status", false);
 					result.put("msg", "over row data");
 					result.put("text", "");
 
 					deleteFile(new File(destDir + newFile));
-					
+
 					return result;
 				}
-				
+
 				for (int nRowIndex = 0; nRowIndex < nRowCount; nRowIndex++) {
 					List data = new ArrayList();
 					int count = 0;
@@ -151,7 +151,7 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 							}
 						}
 					}
-			
+
 					if (nRowIndex == 0 && data.size() != headerCount) {
 						result.put("status", false);
 						result.put("msg", "header count error");
@@ -187,6 +187,93 @@ public class OpenOfficeServiceImpl implements OpenOfficeService {
 			result.put("msg", unzipResult.get("msg"));
 			result.put("text", "");
 		}
+
+		return result;
+	}
+
+	public JSONObject readODS(String file, String destDir, int headerCount) throws IOException {
+		JSONObject result = new JSONObject();
+
+		List<List> dataList = new ArrayList();
+
+		if (!file.contains("ods")) {
+			result.put("status", false);
+			result.put("msg", "not ods file");
+			result.put("file", "");
+			result.put("text", "");
+
+			deleteFile(new File(destDir + file));
+
+			return result;
+		}
+
+		try {
+			SpreadSheet spreadsheet = SpreadSheet.createFromFile(new File(destDir + file));
+			int nColCount = spreadsheet.getSheet(0).getColumnCount();
+			int nRowCount = spreadsheet.getSheet(0).getRowCount();
+
+			if (nRowCount >= 100000) {
+				result.put("status", false);
+				result.put("msg", "over row data");
+				result.put("text", "");
+
+				deleteFile(new File(destDir + file));
+
+				return result;
+			}
+
+			for (int nRowIndex = 0; nRowIndex < nRowCount; nRowIndex++) {
+				List data = new ArrayList();
+				int count = 0;
+				for (int nColIndex = 0; nColIndex < nColCount; nColIndex++) {
+					String value = spreadsheet.getSheet(0).getCellAt(nColIndex, nRowIndex).getTextValue();
+					value = FilterString.cleanXSS(value);
+					value = FilterString.cleanSqlInjection(value);
+
+					if (nRowIndex == 0) {
+						if (!"".equals(value.trim())) {
+							data.add(value.trim());
+						}
+					} else {
+						if ("".equals(value.trim())) {
+							count++;
+						}
+						if (nColIndex < headerCount) {
+							data.add(value.trim());
+						}
+					}
+				}
+
+				if (nRowIndex == 0 && data.size() != headerCount) {
+					result.put("status", false);
+					result.put("msg", "header count error");
+					result.put("text", "");
+
+					deleteFile(new File(destDir + file));
+
+					return result;
+				}
+
+				if (count == headerCount) {
+					continue;
+				}
+
+				dataList.add(data);
+			}
+
+			JSONArray text = new JSONArray(dataList);
+
+			result.put("status", true);
+			result.put("msg", "success");
+			result.put("text", text);
+
+		} catch (IOException e) {
+			result.put("status", false);
+			result.put("msg", e.getMessage());
+			result.put("text", "");
+		}
+
+		deleteFile(new File(destDir + file));
 
 		return result;
 	}

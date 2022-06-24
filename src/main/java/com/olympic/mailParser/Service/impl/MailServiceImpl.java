@@ -106,7 +106,7 @@ public class MailServiceImpl implements MailService {
 
 		return folder;
 	}
-	
+
 	public void mailMessages(MimeMessage msg) throws MessagingException, IOException {
 		System.out.println("------------------解析第" + msg.getMessageNumber() + "封信件-------------------- ");
 		System.out.println("主旨: " + getSubject(msg));
@@ -296,7 +296,7 @@ public class MailServiceImpl implements MailService {
 
 			String disp = bodyPart.getDisposition();
 			if (disp != null && (disp.equalsIgnoreCase(Part.ATTACHMENT) || disp.equalsIgnoreCase(Part.INLINE))) {
-				if (bodyPart.getContentType().contains(type)) {
+				if (decodeText(bodyPart.getFileName()).contains(type)) {
 					status = true;
 				}
 			} else if (bodyPart.isMimeType("multipart/*")) {
@@ -304,7 +304,7 @@ public class MailServiceImpl implements MailService {
 			} else {
 				String contentType = bodyPart.getContentType();
 				if (contentType.indexOf("name") != -1 || contentType.indexOf("application") != -1) {
-					if (bodyPart.getContentType().contains(type)) {
+					if (decodeText(bodyPart.getFileName()).contains(type)) {
 						status = true;
 					}
 				}

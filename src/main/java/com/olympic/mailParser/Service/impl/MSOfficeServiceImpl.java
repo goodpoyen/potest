@@ -2,11 +2,13 @@ package com.olympic.mailParser.Service.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -16,6 +18,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -218,6 +221,104 @@ public class MSOfficeServiceImpl implements MSOfficeService {
 			} else {
 				result.put("msg", "Something Wrong");
 			}
+			result.put("text", "");
+		}
+
+		deleteFile(new File(destDir + file));
+
+		return result;
+	}
+	
+	public JSONObject readExcel(String file, String fileType, String destDir, int headerCount) {
+		JSONObject result = new JSONObject();
+		try {
+			Workbook wb = null;
+			List<List> dataList = new ArrayList();
+
+			if (fileType.equals("xls")) {
+				InputStream is = new FileInputStream(destDir + file);
+				wb = new HSSFWorkbook(is);
+			} else if (fileType.equals("xlsx")) {
+				InputStream is = new FileInputStream(destDir + file);
+				wb = new XSSFWorkbook(is);;
+			}
+
+			Sheet sheet = wb.getSheetAt(0);
+			int rowCount = sheet.getPhysicalNumberOfRows();
+			
+			if (rowCount >= 100000) {
+				result.put("status", false);
+				result.put("msg", "over row data");
+				result.put("text", "");
+
+				deleteFile(new File(destDir + file));
+				
+				return result;
+			}
+
+			for (int r = 0; r < rowCount; r++) {
+				Row row = sheet.getRow(r);
+				List data = new ArrayList();
+				int cellCount = row.getLastCellNum();
+				int count = 0;
+				if (r != 0) {
+					if (headerCount >= cellCount) {
+						cellCount = cellCount + (headerCount - cellCount);
+					} else {
+						cellCount = headerCount;
+					}
+				}
+
+				for (int columnIndex = 0; columnIndex < cellCount; columnIndex++) {
+					String cellType = "";
+					Cell cell = row.getCell(columnIndex);
+					if (cell != null) {
+						cellType = cell.getCellType().toString();
+					} else {
+						cellType = "NULL";
+					}
+
+					String cellValue = getValue(cellType, cell);
+
+					if (r == 0) {
+						if (!"".equals(cellValue.trim())) {
+							data.add(cellValue.trim());
+						}
+					} else {
+						if ("".equals(cellValue.trim())) {
+							count++;
+						}
+						data.add(cellValue.trim());
+					}
+				}
+
+				if (r == 0 && data.size() != headerCount) {
+					result.put("status", false);
+					result.put("msg", "header count error");
+					result.put("text", "");
+
+					deleteFile(new File(destDir + file));
+
+					return result;
+				}
+
+				if (count == headerCount) {
+					continue;
+				}
+
+				dataList.add(data);
+			}
+
+			JSONArray text = new JSONArray(dataList);
+
+			result.put("status", true);
+			result.put("msg", "success");
+			result.put("text", text);
+
+			wb.close();
+		} catch (Exception e) {
+			result.put("status", false);
+			result.put("msg", "Something Wrong");
 			result.put("text", "");
 		}
 

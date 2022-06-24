@@ -10,5 +10,7 @@ public interface OpenOfficeService {
 
 	JSONObject readODS(String file, String destDir, String pwd, int headerCount) throws IOException;
 
+	public JSONObject readODS(String file, String destDir, int headerCount) throws IOException;
+
 	void deleteFile(File file);
 }

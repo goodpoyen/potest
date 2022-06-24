@@ -1,9 +1,5 @@
 package com.olympic.mailParser.controller;
 
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +9,7 @@ import com.olympic.mailParser.DAO.Repository.OlympicScheduleRepository;
 import com.olympic.mailParser.Service.impl.AES256ServiceImpl;
 import com.olympic.mailParser.Service.impl.CSVFileServiceImpl;
 import com.olympic.mailParser.Service.impl.MSOfficeServiceImpl;
+import com.olympic.mailParser.Service.impl.RegisterMailParserServiceImpl;
 import com.olympic.mailParser.Service.impl.SignUpMailParserServiceImpl;
 import com.olympic.mailParser.Service.impl.TOISignUpServiceImpl;
 import com.olympic.mailParser.Service.impl.ZipFileServiceImpl;
@@ -26,6 +23,9 @@ public class TestController {
 
 	@Autowired
 	SignUpMailParserServiceImpl SignUpMailParserServiceImpl;
+	
+	@Autowired
+	RegisterMailParserServiceImpl RegisterMailParserServiceImpl;
 
 	@Autowired
 	ZipFileServiceImpl ZipFileServiceImpl;
@@ -57,11 +57,21 @@ public class TestController {
 	private String olyId = "3";
 
 	@GetMapping("/test")
-	public String home() throws Exception {
+	public String test() throws Exception {
 		IMAPStore store = SignUpMailParserServiceImpl.mailConnectIMAP();
 		IMAPFolder folder = SignUpMailParserServiceImpl.getIMAPFolder(store);
 
 		SignUpMailParserServiceImpl.parseMessageIMAP(store, folder);
+
+		return "finish";
+	}
+	
+	@GetMapping("/test2")
+	public String test2() throws Exception {
+		IMAPStore store = SignUpMailParserServiceImpl.mailConnectIMAP();
+		IMAPFolder folder = SignUpMailParserServiceImpl.getIMAPFolder(store);
+
+		RegisterMailParserServiceImpl.parseMessageIMAP(store, folder);
 
 		return "finish";
 	}
@@ -119,9 +129,9 @@ public class TestController {
 //		System.out.println("MD5: "+ Tool.getMD5(pwd));
 //		System.out.println("------------------------");
 		
-		AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
-		System.out.println(AES256ServiceImpl.encode("A1235"));
-		System.out.println(AES256ServiceImpl.decode("2db38a0ce3d74f740d653b67addf9bb1b0f1b62bf7966bff1d249f6bebe19394"));
+//		AES256ServiceImpl.setKey("uBdUx82vPHkDKb284d7NkjFoNcKWBuka", "c558Gq0YQK2QUlMc");
+//		System.out.println(AES256ServiceImpl.encode("A1235"));
+//		System.out.println(AES256ServiceImpl.decode("2db38a0ce3d74f740d653b67addf9bb1b0f1b62bf7966bff1d249f6bebe19394"));
 //		AES256ServiceImpl.decode("78754f08fef7104dcdc4860108c11a6c");
 		
 		return "db test";

@@ -11,6 +11,8 @@ public interface MSOfficeService {
 
 	JSONObject readExcel(String file, String fileType, String destDir, String pwd, int headerCount);
 
+	public JSONObject readExcel(String file, String fileType, String destDir, int headerCount);
+
 	String getValue(String cellType, Cell cell);
 
 	void deleteFile(File file);

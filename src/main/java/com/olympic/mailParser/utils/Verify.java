@@ -127,6 +127,16 @@ public class Verify {
 
 		return status;
 	}
+	
+	public Boolean checkSubjectByRegister(String olympic) {
+		Boolean status = false;
+
+		if (olympic.contains("[TPMSO]奧林匹亞註冊")) {
+			status = true;
+		}
+
+		return status;
+	}
 
 	public String checkOlympic(String olympic) {
 		if (olympic.contains("[TMO]")) {

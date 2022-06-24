@@ -104,7 +104,7 @@ public class SignUpMailParserServiceImpl implements SignUpMailParserService {
 
 			JSONObject scheduleDataResult = getOlympicScheduleData(MailServiceImpl.getSubject(msg));
 
-			if (scheduleDataResult.getBoolean("status")) {
+			if (scheduleDataResult.getBoolean("status") && !MailServiceImpl.isSeen(msg)) {
 				MailServiceImpl.mailMessages(msg);
 
 				int headerCount = scheduleDataResult.getInt("headerCount");
