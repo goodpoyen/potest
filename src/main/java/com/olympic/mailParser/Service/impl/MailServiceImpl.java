@@ -157,7 +157,7 @@ public class MailServiceImpl implements MailService {
 		} else {
 			addresss = msg.getRecipients(type);
 		}
-
+//		msg.getRecipients(Message.RecipientType.CC);
 		if (addresss == null || addresss.length < 1)
 			throw new MessagingException("没有收件人!");
 		for (Address address : addresss) {
